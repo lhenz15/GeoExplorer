@@ -75,32 +75,37 @@ struct CountryListView: View {
                     ContentUnavailableView.search(text: searchText)
                 } else {
                     List(filteredCountries) { country in
-                        HStack(spacing: 14) {
-                            // Flag emoji displayed large so it's easy to learn.
-                            Text(country.flag)
-                                .font(.system(size: 36))
-                                .frame(width: 44)   // fixed width keeps names aligned
+                        // `NavigationLink` wraps a row and makes it tappable.
+                        // When tapped, SwiftUI pushes `CountryDetailView` onto
+                        // the navigation stack and shows a back button automatically.
+                        NavigationLink(destination: CountryDetailView(country: country)) {
+                            HStack(spacing: 14) {
+                                // Flag emoji displayed large so it's easy to learn.
+                                Text(country.flag)
+                                    .font(.system(size: 36))
+                                    .frame(width: 44)   // fixed width keeps names aligned
 
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(country.name)
-                                    .font(.headline)
-                                Text(country.capital)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(country.name)
+                                        .font(.headline)
+                                    Text(country.capital)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                // Show continent tag only when "All" is selected,
+                                // otherwise it's redundant.
+                                if selectedContinent == "All" {
+                                    Text(country.continent)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
                             }
-
-                            Spacer()
-
-                            // Show continent tag only when "All" is selected,
-                            // otherwise it's redundant.
-                            if selectedContinent == "All" {
-                                Text(country.continent)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                     .listStyle(.plain)
                 }
