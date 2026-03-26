@@ -35,6 +35,8 @@ struct FlashcardView: View {
     // ── Body ──────────────────────────────────────────────────────────────────
     var body: some View {
         VStack(spacing: 20) {
+            // .screenAppear() fades + lightly scales the content in when
+            // this screen is pushed onto the NavigationStack.
 
             progressHeader
 
@@ -55,6 +57,7 @@ struct FlashcardView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .screenAppear()
         .navigationTitle("Card \(currentIndex + 1) of \(cards.count)")
         .navigationBarTitleDisplayMode(.inline)
         // Hide the default back button — we provide our own "Quit".
@@ -76,7 +79,7 @@ struct FlashcardView: View {
             // `ProgressView(value:total:)` draws a filled horizontal bar.
             // value / total = fraction complete. SwiftUI handles the math.
             ProgressView(value: Double(currentIndex + 1), total: Double(cards.count))
-                .tint(.blue)
+                .tint(AppColors.accent)
 
             Text("\(currentIndex + 1) / \(cards.count)")
                 .font(.caption)
@@ -169,10 +172,16 @@ struct FlashcardView: View {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private func flipCard() {
-        // `withAnimation` wraps a state change so SwiftUI smoothly interpolates
-        // between the old and new values using the spring curve.
-        // Without `withAnimation`, the rotation would jump instantly.
-        withAnimation(.spring(duration: 0.5, bounce: 0.2)) {
+        // `withAnimation` wraps the state change so SwiftUI smoothly
+        // interpolates the 3D rotation between 0° and 180°.
+        //
+        // Physics tuning:
+        //   response: 0.55   → slightly slower than default; gives the card
+        //                       time to feel like it has physical weight.
+        //   dampingFraction: 0.6 → underdamped spring; the card overshoots
+        //                       180° slightly and wobbles back, like a real
+        //                       physical card flicked off a table.
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.6)) {
             isFlipped.toggle()
         }
     }

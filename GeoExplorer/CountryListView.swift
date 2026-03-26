@@ -59,8 +59,8 @@ struct CountryListView: View {
                             .padding(.vertical, 8)
                             // Highlight the active pill in blue, others in grey.
                             .background(selectedContinent == continent
-                                        ? Color.blue
-                                        : Color(.systemGray5))
+                                        ? AppColors.accent
+                                        : AppColors.surface)
                             .foregroundStyle(selectedContinent == continent
                                              ? Color.white
                                              : Color.primary)

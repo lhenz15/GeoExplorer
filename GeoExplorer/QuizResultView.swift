@@ -39,6 +39,10 @@ struct QuizResultView: View {
 
     // ── Body ──────────────────────────────────────────────────────────────────
     var body: some View {
+        // ZStack layers the confetti on top of the result content.
+        // We only show confetti when the user scored 70 % or above —
+        // it's a reward for a good performance, not a consolation prize.
+        ZStack {
         VStack(spacing: 0) {
 
             Spacer()
@@ -75,7 +79,7 @@ struct QuizResultView: View {
             }
             .padding(.vertical, 20)
             .padding(.horizontal, 24)
-            .background(Color(.systemGray6))
+            .background(AppColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, 24)
 
@@ -92,6 +96,7 @@ struct QuizResultView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .scaleOnPress()
 
                 Button {
                     path = []
@@ -101,10 +106,20 @@ struct QuizResultView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
+                .scaleOnPress()
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
+        .screenAppear()
+
+        // Confetti fires once when the view appears and fades out on its own.
+        // .allowsHitTesting(false) inside ConfettiView lets button taps through.
+        if percentage >= 0.7 {
+            ConfettiView()
+        }
+
+        } // end ZStack
         .navigationTitle("Results")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()

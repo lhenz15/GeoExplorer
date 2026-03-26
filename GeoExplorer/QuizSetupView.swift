@@ -95,6 +95,9 @@ struct QuizSetupView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .disabled(availableCountries.isEmpty)
+                        // scaleOnPress() adds a spring scale-down on press
+                        // so the button gives instant tactile feedback.
+                        .scaleOnPress()
                     }
                     .padding(.vertical, 4)
                 }

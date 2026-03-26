@@ -140,6 +140,13 @@ struct StatsView: View {
                 .foregroundStyle(iconColor)
             Text(topText)
                 .font(.system(size: 36, weight: .bold))
+                // .contentTransition(.numericText()) animates number changes
+                // by counting up/down digit-by-digit — feels alive when the
+                // streak increments after a study session.
+                // .animation(…, value: streak) triggers the spring whenever
+                // the @AppStorage streak value changes.
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.4, dampingFraction: 0.75), value: streak)
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -147,7 +154,7 @@ struct StatsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .background(Color(.systemGray6))
+        .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -241,12 +248,20 @@ struct StatsView: View {
     @ViewBuilder
     private var historySection: some View {
         if sessions.isEmpty {
-            // Friendly empty state — shown until the first quiz is completed.
-            ContentUnavailableView(
-                "No Sessions Yet",
-                systemImage: "chart.bar",
-                description: Text("Complete a quiz to see your history here.")
-            )
+            // Custom emoji empty state — warmer than the default system view.
+            VStack(spacing: 16) {
+                Text("🎯")
+                    .font(.system(size: 72))
+                Text("No Sessions Yet")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Text("Complete a quiz to see\nyour history here.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
         } else {
             GroupBox {
                 VStack(spacing: 0) {
