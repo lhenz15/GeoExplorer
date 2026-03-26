@@ -4,6 +4,7 @@
 // The main screen of the app: a searchable, filterable list of all countries.
 
 import SwiftUI
+import SwiftData
 
 struct CountryListView: View {
 
@@ -131,4 +132,5 @@ struct CountryListView: View {
 
 #Preview {
     CountryListView()
+        .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

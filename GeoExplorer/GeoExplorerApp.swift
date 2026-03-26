@@ -1,18 +1,8 @@
 // GeoExplorerApp.swift
 // GeoExplorer
 //
-// The app entry point. `@main` tells Swift "start here."
-//
-// New concept: .modelContainer
-//   `.modelContainer(for:)` is the one-time setup call that creates (or opens)
-//   the SwiftData SQLite database on the device. Passing `FavoriteCountry.self`
-//   tells SwiftData which @Model types to include.
-//
-//   Once attached here, every view in the app can:
-//     • Read data via @Query
-//     • Write data via @Environment(\.modelContext)
-//   — without any extra plumbing. The container flows down automatically
-//   through SwiftUI's environment, just like colour schemes or font sizes.
+// App entry point. Configures the SwiftData container and requests
+// notification permission on first launch.
 
 import SwiftUI
 import SwiftData
@@ -22,10 +12,19 @@ struct GeoExplorerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                // Request notification permission on first launch.
+                // iOS shows the system dialog only once — subsequent calls
+                // are silent and just check the stored decision.
+                .task {
+                    NotificationManager.requestPermission { _ in }
+                }
         }
-        // Creates the SQLite database file in the app's private storage.
-        // This call runs once at launch; subsequent launches open the
-        // existing file so favourites survive app restarts.
-        .modelContainer(for: FavoriteCountry.self)
+        // Register all three @Model types with the container.
+        // Passing an array lets SwiftData create all their tables in one file.
+        .modelContainer(for: [
+            FavoriteCountry.self,
+            QuizSession.self,
+            CountryProgress.self,
+        ])
     }
 }

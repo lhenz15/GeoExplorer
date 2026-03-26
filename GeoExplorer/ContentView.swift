@@ -1,11 +1,12 @@
 // ContentView.swift
 // GeoExplorer
 //
-// The root view. Hosts a TabView with four tabs:
+// The root view. Hosts a TabView with five tabs:
 //   1. Countries  — the browseable country list
 //   2. Favourites — countries the user has hearted
 //   3. Flashcards — the study mode
 //   4. Quiz       — multiple choice quiz with timer
+//   5. Stats      — streak, mastery, personal bests, history
 
 import SwiftUI
 
@@ -35,6 +36,12 @@ struct ContentView: View {
             QuizSetupView()
                 .tabItem {
                     Label("Quiz", systemImage: "checkmark.circle")
+                }
+
+            // ── Tab 5: Stats dashboard ─────────────────────────────────────
+            StatsView()
+                .tabItem {
+                    Label("Stats", systemImage: "chart.bar.fill")
                 }
         }
     }

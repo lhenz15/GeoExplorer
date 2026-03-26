@@ -12,15 +12,16 @@
 //   • .navigationBarBackButtonHidden — hides the default "<Back" button
 
 import SwiftUI
+import SwiftData
 
 struct FlashcardView: View {
 
     let cards: [Flashcard]
-
-    // `@Binding` means this view doesn't own `path` — it borrows a reference
-    // to the array that FlashcardSetupView owns. Changes here affect the
-    // original, so both views stay in sync.
     @Binding var path: [FlashcardRoute]
+
+    // ── SwiftData ─────────────────────────────────────────────────────────────
+    @Environment(\.modelContext) private var modelContext
+    @Query private var progressList: [CountryProgress]
 
     // ── Local state ───────────────────────────────────────────────────────────
     @State private var currentIndex = 0
@@ -148,8 +149,8 @@ struct FlashcardView: View {
 
             // Next or Finish button
             if isLastCard {
-                // Push the results route — NavigationStack will show ResultView.
                 Button("Finish  ✓") {
+                    saveProgress()
                     path.append(.results(cardCount: cards.count, cards: cards))
                 }
                 .buttonStyle(.borderedProminent)
@@ -177,9 +178,23 @@ struct FlashcardView: View {
     }
 
     private func moveCard(by offset: Int) {
-        // Reset to the front side — no animation so the new card appears fresh.
         isFlipped = false
         currentIndex += offset
+    }
+
+    // ── Progress saving ───────────────────────────────────────────────────────
+    // Called when the user taps Finish. Every card studied counts as one
+    // correct answer towards mastery (3 correct = mastered).
+    private func saveProgress() {
+        for card in cards {
+            guard !card.countryName.isEmpty else { continue }
+            if let existing = progressList.first(where: { $0.countryName == card.countryName }) {
+                existing.correctCount += 1
+            } else {
+                modelContext.insert(CountryProgress(countryName: card.countryName, correctCount: 1))
+            }
+        }
+        StreakManager.recordStudySession()
     }
 }
 
@@ -262,4 +277,5 @@ private struct CardFace: View {
             path: .constant([.session([])])
         )
     }
+    .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

@@ -10,6 +10,7 @@
 
 import SwiftUI
 import MapKit   // gives us Map, Marker, MKCoordinateRegion, CLLocationCoordinate2D
+import SwiftData
 
 struct CountryDetailView: View {
 
@@ -161,4 +162,5 @@ private struct InfoCard: View {
             latitude: 48.86, longitude: 2.35
         ))
     }
+    .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

@@ -143,4 +143,5 @@ struct FavoritesView: View {
 
 #Preview {
     FavoritesView()
+        .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

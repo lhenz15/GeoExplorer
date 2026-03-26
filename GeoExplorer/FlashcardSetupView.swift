@@ -151,15 +151,16 @@ struct FlashcardSetupView: View {
         return slice.map { country in
             switch mode {
             case .flagToCountry:
-                // Question: just the flag emoji (shown very large on the card).
-                // Answer: the country's name.
-                return Flashcard(question: country.flag, answer: country.name)
-            case .countryToCapital:
-                // Question: flag + name together.
-                // Answer: the capital city.
                 return Flashcard(
-                    question: "\(country.flag)  \(country.name)",
-                    answer: country.capital
+                    question   : country.flag,
+                    answer     : country.name,
+                    countryName: country.name
+                )
+            case .countryToCapital:
+                return Flashcard(
+                    question   : "\(country.flag)  \(country.name)",
+                    answer     : country.capital,
+                    countryName: country.name
                 )
             }
         }

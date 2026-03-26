@@ -10,12 +10,20 @@ import Foundation
 // `Hashable` is needed so we can put [Flashcard] inside a `FlashcardRoute`
 // enum and use it with NavigationStack's programmatic navigation.
 struct Flashcard: Identifiable, Hashable {
-    // Auto-generated UUID — not from JSON, just a runtime identity.
-    let id = UUID()
-    let question: String   // shown on the front of the card
-    let answer: String     // revealed when the card is flipped
+    let id          = UUID()
+    let question    : String
+    let answer      : String
+    // Always the country name regardless of study mode — used by FlashcardView
+    // to update CountryProgress when the session finishes.
+    // Defaults to "" so existing preview call sites compile unchanged.
+    let countryName : String
 
-    // Custom Hashable: we only care about identity, not content equality.
+    init(question: String, answer: String, countryName: String = "") {
+        self.question    = question
+        self.answer      = answer
+        self.countryName = countryName
+    }
+
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
     static func == (lhs: Flashcard, rhs: Flashcard) -> Bool { lhs.id == rhs.id }
 }
