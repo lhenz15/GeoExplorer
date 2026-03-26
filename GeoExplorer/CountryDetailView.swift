@@ -97,6 +97,12 @@ struct CountryDetailView: View {
         // `.inline` keeps the title small in the nav bar (the big flag is the hero).
         .navigationTitle(country.name)
         .navigationBarTitleDisplayMode(.inline)
+        // Place the heart button in the top-right corner of the nav bar.
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                FavoriteButton(countryName: country.name)
+            }
+        }
     }
 
     // ── Computed helpers ─────────────────────────────────────────────────────

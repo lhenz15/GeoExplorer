@@ -108,6 +108,12 @@ struct CountryListView: View {
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
+
+                                // Heart button — self-contained, reads and writes
+                                // SwiftData on its own. `.plain` buttonStyle means
+                                // tapping the heart doesn't also trigger the
+                                // NavigationLink navigation.
+                                FavoriteButton(countryName: country.name)
                             }
                             .padding(.vertical, 4)
                         }

@@ -1,9 +1,10 @@
 // ContentView.swift
 // GeoExplorer
 //
-// The root view. Now hosts a TabView with two tabs:
-//   1. Countries — the browseable country list
-//   2. Flashcards — the study mode
+// The root view. Hosts a TabView with three tabs:
+//   1. Countries  — the browseable country list
+//   2. Favourites — countries the user has hearted
+//   3. Flashcards — the study mode
 //
 // New concept: TabView
 //   A `TabView` renders a tab bar at the bottom of the screen.
@@ -23,7 +24,13 @@ struct ContentView: View {
                     Label("Countries", systemImage: "globe")
                 }
 
-            // ── Tab 2: Flashcard study mode ────────────────────────────────
+            // ── Tab 2: Favourites ──────────────────────────────────────────
+            FavoritesView()
+                .tabItem {
+                    Label("Favourites", systemImage: "heart.fill")
+                }
+
+            // ── Tab 3: Flashcard study mode ────────────────────────────────
             FlashcardSetupView()
                 .tabItem {
                     Label("Flashcards", systemImage: "rectangle.stack")
