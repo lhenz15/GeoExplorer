@@ -10,7 +10,8 @@ struct QuizResultView: View {
 
     let score    : Int
     let total    : Int
-    let questions: [QuizQuestion]   // kept so "Play Again" can reuse them
+    let mode     : QuizMode
+    let questions: [QuizQuestion]
     @Binding var path: [QuizRoute]
 
     // ── Derived values ────────────────────────────────────────────────────────
@@ -83,9 +84,8 @@ struct QuizResultView: View {
             // ── Action buttons ─────────────────────────────────────────────
             VStack(spacing: 12) {
 
-                // Reshuffle the same questions for a quick rematch.
                 Button {
-                    path = [.quiz(questions.shuffled())]
+                    path = [.quiz(mode: mode, questions: questions.shuffled())]
                 } label: {
                     Label("Play Again", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
@@ -132,8 +132,12 @@ struct QuizResultView: View {
         QuizResultView(
             score    : 7,
             total    : 10,
+            mode     : .flagToCountry,
             questions: [],
-            path     : .constant([.quiz([]), .results(score: 7, total: 10, questions: [])])
+            path     : .constant([
+                .quiz(mode: .flagToCountry, questions: []),
+                .results(score: 7, total: 10, mode: .flagToCountry, questions: [])
+            ])
         )
     }
 }

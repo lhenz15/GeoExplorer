@@ -87,7 +87,7 @@ struct QuizSetupView: View {
                         }
 
                         Button {
-                            path.append(.quiz(generateQuestions()))
+                            path.append(.quiz(mode: mode, questions: generateQuestions()))
                         } label: {
                             Text("Start Quiz")
                                 .frame(maxWidth: .infinity)
@@ -104,10 +104,10 @@ struct QuizSetupView: View {
             // ── Navigation destinations ────────────────────────────────────
             .navigationDestination(for: QuizRoute.self) { route in
                 switch route {
-                case .quiz(let questions):
-                    QuizView(questions: questions, path: $path)
-                case .results(let score, let total, let questions):
-                    QuizResultView(score: score, total: total, questions: questions, path: $path)
+                case .quiz(let mode, let questions):
+                    QuizView(questions: questions, mode: mode, path: $path)
+                case .results(let score, let total, let mode, let questions):
+                    QuizResultView(score: score, total: total, mode: mode, questions: questions, path: $path)
                 }
             }
         }
@@ -164,7 +164,12 @@ struct QuizSetupView: View {
             let wrongs  = Array(wrongPool.shuffled().prefix(3))
             let choices = ([correct] + wrongs).shuffled()
 
-            return QuizQuestion(prompt: prompt, correctAnswer: correct, choices: choices)
+            return QuizQuestion(
+                prompt       : prompt,
+                correctAnswer: correct,
+                choices      : choices,
+                countryName  : country.name
+            )
         }
     }
 }
