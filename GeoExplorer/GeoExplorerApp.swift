@@ -1,32 +1,16 @@
+// GeoExplorerApp.swift
+// GeoExplorer
 //
-//  GeoExplorerApp.swift
-//  GeoExplorer
-//
-//  Created by Luis Henríquez on 25/03/26.
-//
+// The app entry point. `@main` tells Swift "start here."
+// We removed SwiftData because our data is static — no database needed.
 
 import SwiftUI
-import SwiftData
 
 @main
 struct GeoExplorerApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
     }
 }

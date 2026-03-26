@@ -1,18 +1,6 @@
+// Item.swift
+// GeoExplorer
 //
-//  Item.swift
-//  GeoExplorer
-//
-//  Created by Luis Henríquez on 25/03/26.
-//
-
-import Foundation
-import SwiftData
-
-@Model
-final class Item {
-    var timestamp: Date
-    
-    init(timestamp: Date) {
-        self.timestamp = timestamp
-    }
-}
+// This file was the default Xcode SwiftData template. It is kept here as an
+// empty placeholder so the project file reference stays valid.
+// The app's data model now lives in Country.swift and CountryData.swift.
