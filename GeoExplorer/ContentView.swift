@@ -1,16 +1,11 @@
 // ContentView.swift
 // GeoExplorer
 //
-// The root view. Hosts a TabView with three tabs:
+// The root view. Hosts a TabView with four tabs:
 //   1. Countries  — the browseable country list
 //   2. Favourites — countries the user has hearted
 //   3. Flashcards — the study mode
-//
-// New concept: TabView
-//   A `TabView` renders a tab bar at the bottom of the screen.
-//   Each child view becomes one tab. `.tabItem` provides the icon and label.
-//   SwiftUI keeps each tab's navigation state independent — switching tabs
-//   doesn't reset the other tab's position in the stack.
+//   4. Quiz       — multiple choice quiz with timer
 
 import SwiftUI
 
@@ -34,6 +29,12 @@ struct ContentView: View {
             FlashcardSetupView()
                 .tabItem {
                     Label("Flashcards", systemImage: "rectangle.stack")
+                }
+
+            // ── Tab 4: Multiple choice quiz ────────────────────────────────
+            QuizSetupView()
+                .tabItem {
+                    Label("Quiz", systemImage: "checkmark.circle")
                 }
         }
     }
