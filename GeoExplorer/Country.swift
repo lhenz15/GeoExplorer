@@ -1,18 +1,20 @@
 // Country.swift
 // GeoExplorer
 //
-// The core data model for the app.
+// The core data model. Adding fields here means CountryData.swift must
+// supply values for every country — Swift will refuse to compile otherwise.
 
 import Foundation
 
-// A `struct` is a value type — think of it like a blueprint for a data record.
-// `Identifiable` means every Country has a unique `id`, which SwiftUI needs
-// to efficiently update lists without reloading everything.
 struct Country: Identifiable {
-    // `UUID()` auto-generates a unique ID each time a Country is created.
     let id = UUID()
     let name: String
     let capital: String
     let continent: String
-    let flag: String   // Flag emoji, e.g. "🇫🇷"
+    let flag: String        // Flag emoji, e.g. "🇫🇷"
+    let population: Int     // Approximate current population
+    let area: Double        // Land area in km²
+    let funFact: String     // One interesting fact shown on the detail screen
+    let latitude: Double    // Capital city latitude  (positive = North)
+    let longitude: Double   // Capital city longitude (positive = East)
 }
