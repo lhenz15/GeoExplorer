@@ -16,11 +16,16 @@ struct CountryListView: View {
     // All available filter options. "All" means no filter is applied.
     let continents = ["All", "Africa", "Americas", "Asia", "Europe", "Oceania"]
 
+    // Load all countries once from JSON when the view is first created.
+    // `let` means this array never changes — DataLoader does the heavy
+    // lifting of finding, reading, and decoding the JSON file.
+    private let countries = DataLoader.loadCountries()
+
     // A computed property — recalculated every time `searchText` or
     // `selectedContinent` changes. SwiftUI automatically notices the change
     // and rerenders the list.
     var filteredCountries: [Country] {
-        CountryData.all.filter { country in
+        countries.filter { country in
             // `localizedCaseInsensitiveContains` handles "france" == "France".
             let matchesSearch = searchText.isEmpty
                 || country.name.localizedCaseInsensitiveContains(searchText)
