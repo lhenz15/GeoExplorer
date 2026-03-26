@@ -9,6 +9,7 @@
 //   • private struct — a helper view scoped to this file only
 
 import SwiftUI
+import SwiftData
 import MapKit   // gives us Map, Marker, MKCoordinateRegion, CLLocationCoordinate2D
 
 struct CountryDetailView: View {
@@ -16,11 +17,19 @@ struct CountryDetailView: View {
     // `let` (constant) because we never change the country on this screen.
     let country: Country
 
+    // ── Flag bounce animation ─────────────────────────────────────────────────
+    // Starts at 10 % of its final size so the spring has room to grow and
+    // overshoot (bounce). dampingFraction < 1 means the spring oscillates —
+    // like a real object on a spring — before settling at 1.0.
+    @State private var flagScale: CGFloat = 0.1
+
     var body: some View {
         // ScrollView makes the whole page scrollable — important when the
         // content (cards + map) is taller than the phone screen.
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                // .screenAppear() fades + lightly scales the whole content
+                // block in once it's pushed onto the NavigationStack.
 
                 // ── Header: flag + name ──────────────────────────────────
                 // `HStack { Spacer() ... Spacer() }` is a common SwiftUI
@@ -28,8 +37,19 @@ struct CountryDetailView: View {
                 HStack {
                     Spacer()
                     VStack(spacing: 8) {
+                        // Spring bounce: starts tiny, overshoots 1.0, settles.
+                        // response: controls the "speed" of the spring.
+                        // dampingFraction: 0.5 = lightly damped → 2-3 bounces.
                         Text(country.flag)
                             .font(.system(size: 90))
+                            .scaleEffect(flagScale)
+                            .onAppear {
+                                withAnimation(
+                                    .spring(response: 0.5, dampingFraction: 0.5)
+                                ) {
+                                    flagScale = 1.0
+                                }
+                            }
                         Text(country.name)
                             .font(.title)
                             .fontWeight(.bold)
@@ -93,7 +113,9 @@ struct CountryDetailView: View {
                 }
             }
             .padding(16)
+            .screenAppear()
         }
+        .background(AppColors.background)
         // `.inline` keeps the title small in the nav bar (the big flag is the hero).
         .navigationTitle(country.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -145,7 +167,7 @@ private struct InfoCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemGray6))
+        .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
@@ -161,4 +183,5 @@ private struct InfoCard: View {
             latitude: 48.86, longitude: 2.35
         ))
     }
+    .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

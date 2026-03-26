@@ -60,14 +60,22 @@ struct FavoritesView: View {
     var body: some View {
         NavigationStack {
             if favorites.isEmpty {
-                // `ContentUnavailableView` is a built-in iOS 17 component for
-                // showing friendly empty states. It takes a title, SF Symbol,
-                // and an optional description.
-                ContentUnavailableView(
-                    "No Favourites Yet",
-                    systemImage: "heart",
-                    description: Text("Tap the ♡ on any country to save it here.")
-                )
+                // Custom empty state: a large emoji illustration with
+                // an encouraging message — warmer than the default system view.
+                VStack(spacing: 20) {
+                    Spacer()
+                    Text("🌍")
+                        .font(.system(size: 80))
+                    Text("No Favourites Yet")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Tap the ♡ on any country\nto save it here.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
                 .navigationTitle("Favourites")
             } else {
                 VStack(spacing: 0) {
@@ -82,8 +90,8 @@ struct FavoritesView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                                 .background(selectedContinent == continent
-                                            ? Color.blue
-                                            : Color(.systemGray5))
+                                            ? AppColors.accent
+                                            : AppColors.surface)
                                 .foregroundStyle(selectedContinent == continent
                                                  ? Color.white
                                                  : Color.primary)
@@ -143,4 +151,5 @@ struct FavoritesView: View {
 
 #Preview {
     FavoritesView()
+        .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

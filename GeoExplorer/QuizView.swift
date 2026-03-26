@@ -6,6 +6,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct QuizView: View {
 
@@ -59,6 +60,7 @@ struct QuizView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
+            .screenAppear()
         }
         .navigationTitle("Question \(currentIndex + 1) of \(questions.count)")
         .navigationBarTitleDisplayMode(.inline)
@@ -128,7 +130,7 @@ struct QuizView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(24)
-        .background(Color(.systemGray6))
+        .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
@@ -155,10 +157,10 @@ struct QuizView: View {
     }
 
     private func buttonBackground(for choice: String) -> Color {
-        guard isShowingFeedback else { return Color(.systemGray5) }
+        guard isShowingFeedback else { return AppColors.surface }
         if choice == currentQuestion.correctAnswer { return .green }
         if choice == selectedAnswer                { return .red   }
-        return Color(.systemGray5)
+        return AppColors.surface
     }
 
     private func buttonForeground(for choice: String) -> Color {
@@ -176,10 +178,25 @@ struct QuizView: View {
         if answer == currentQuestion.correctAnswer {
             score += 1
             correctCountryNames.append(currentQuestion.countryName)
+            // Only trigger haptics for deliberate taps, not timer timeouts.
+            if answer != nil { triggerHaptic(correct: true) }
+        } else if answer != nil {
+            triggerHaptic(correct: false)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             advanceQuestion()
         }
+    }
+
+    // ── Haptic feedback ───────────────────────────────────────────────────────
+    // UIImpactFeedbackGenerator drives the Taptic Engine on the device.
+    // .light = a gentle tap, perfect for a correct answer ("nice!").
+    // .heavy = a solid thud, reinforces the "oops" feeling on wrong answers.
+    // We create the generator fresh each call — it's lightweight and Apple
+    // recommends not caching it across interactions.
+    private func triggerHaptic(correct: Bool) {
+        let style: UIImpactFeedbackGenerator.FeedbackStyle = correct ? .light : .heavy
+        UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 
     private func advanceQuestion() {
@@ -239,4 +256,5 @@ struct QuizView: View {
             path: .constant([.quiz(mode: .flagToCountry, questions: [])])
         )
     }
+    .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

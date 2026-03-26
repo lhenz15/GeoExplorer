@@ -45,7 +45,7 @@ struct FlashcardResultView: View {
             }
             .padding(.vertical, 24)
             .padding(.horizontal, 32)
-            .background(Color(.systemGray6))
+            .background(AppColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
             Spacer()
