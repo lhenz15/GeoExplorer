@@ -15,6 +15,13 @@ import SwiftUI
 
 struct FlashcardSetupView: View {
 
+    // ── Dismiss ───────────────────────────────────────────────────────────────
+    // @Environment(\.dismiss) gives us a handle to close this view.
+    // When FlashcardSetupView is presented as a .fullScreenCover, calling
+    // dismiss() closes the entire cover and returns to HomeView.
+    // It's a no-op when the view is not presented modally.
+    @Environment(\.dismiss) private var dismiss
+
     // ── Navigation state ──────────────────────────────────────────────────────
     // `path` is the navigation stack as an array of routes.
     // • Empty array  → we're at the setup screen (the root)
@@ -124,6 +131,20 @@ struct FlashcardSetupView: View {
                 }
             }
             .navigationTitle("Flashcards")
+            // ── Close button ──────────────────────────────────────────────────
+            // Shown in the top-left when this view is launched as a
+            // fullScreenCover from HomeView. Tapping it calls dismiss(),
+            // which closes the cover and returns to the dashboard.
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
 
             // ── Navigation destinations ───────────────────────────────────
             // `navigationDestination(for:)` tells SwiftUI what to show when

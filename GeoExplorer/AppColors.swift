@@ -67,6 +67,12 @@ enum AppColors {
                 : UIColor(hex: "F2F0EB")
         }
     )
+
+    /// Always-indigo colours for the hero gradient — the same indigo in both
+    /// Light and Dark Mode (unlike `accent` which adapts). Used in HomeView's
+    /// hero banner and the Explore Countries feature card.
+    static let gradientLeading  = Color(red: 79/255,  green: 70/255,  blue: 229/255)
+    static let gradientTrailing = Color(red: 129/255, green: 140/255, blue: 248/255)
 }
 
 // ── UIColor hex convenience init ─────────────────────────────────────────────
