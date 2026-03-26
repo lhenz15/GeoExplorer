@@ -37,10 +37,7 @@ struct StatsView: View {
     //
     // We share the exact same key string as StreakManager so that when
     // StreakManager calls UserDefaults.standard.set(...), this view updates.
-    @AppStorage(StreakManager.streakKey)            private var streak           = 0
-    @AppStorage("geoexplorer.notificationsOn")      private var notificationsOn  = false
-    @AppStorage("geoexplorer.reminderHour")         private var reminderHour     = 20
-    @AppStorage("geoexplorer.reminderMinute")       private var reminderMinute   = 0
+    @AppStorage(StreakManager.streakKey) private var streak = 0
 
     // ── Other state ───────────────────────────────────────────────────────────
     // Total countries loaded from JSON — used to show "X / 195" mastered.
@@ -65,30 +62,6 @@ struct StatsView: View {
             .min    { $0.timeTaken < $1.timeTaken }
     }
 
-    // ── Reminder time binding ─────────────────────────────────────────────────
-    // A DatePicker needs a Binding<Date>, but we store the time as two
-    // separate @AppStorage Ints (hour and minute) so they're easy to read back.
-    //
-    // `Binding { get } set: { }` lets us build a custom two-way bridge:
-    //   • get: reconstruct a Date from the stored hour + minute
-    //   • set: extract hour + minute from the new Date and save them back
-    private var reminderTimeBinding: Binding<Date> {
-        Binding {
-            var c      = DateComponents()
-            c.hour     = reminderHour
-            c.minute   = reminderMinute
-            return Calendar.current.date(from: c) ?? Date()
-        } set: { newDate in
-            let c      = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-            reminderHour   = c.hour   ?? 20
-            reminderMinute = c.minute ?? 0
-            if notificationsOn {
-                NotificationManager.scheduleDailyReminder(
-                    hour: reminderHour, minute: reminderMinute)
-            }
-        }
-    }
-
     // ── Body ──────────────────────────────────────────────────────────────────
     var body: some View {
         NavigationStack {
@@ -97,21 +70,12 @@ struct StatsView: View {
 
                     heroRow
                     personalBestsSection
-                    reminderSection
                     historySection
 
                 }
                 .padding(16)
             }
             .navigationTitle("Stats")
-            // When the view appears (or the app returns from background),
-            // check whether the user revoked notification permission in Settings
-            // and update the toggle accordingly.
-            .onAppear {
-                NotificationManager.checkAuthorisation { authorised in
-                    if !authorised { notificationsOn = false }
-                }
-            }
         }
     }
 
@@ -202,46 +166,6 @@ struct StatsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // ── Daily reminder ────────────────────────────────────────────────────────
-    private var reminderSection: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 12) {
-
-                // The toggle enables/disables the daily reminder.
-                // `.onChange` fires when the value changes — we use it to
-                // request permission (if first time) or cancel the notification.
-                Toggle("Enable Daily Reminder", isOn: $notificationsOn)
-                    .onChange(of: notificationsOn) { _, newValue in
-                        if newValue {
-                            NotificationManager.requestPermission { granted in
-                                if granted {
-                                    NotificationManager.scheduleDailyReminder(
-                                        hour: reminderHour, minute: reminderMinute)
-                                } else {
-                                    // User denied permission — turn toggle back off.
-                                    notificationsOn = false
-                                }
-                            }
-                        } else {
-                            NotificationManager.cancelReminder()
-                        }
-                    }
-
-                // Only show the time picker when notifications are on.
-                if notificationsOn {
-                    DatePicker(
-                        "Remind me at",
-                        selection : reminderTimeBinding,
-                        displayedComponents: .hourAndMinute
-                    )
-                }
-            }
-        } label: {
-            Label("Daily Reminder", systemImage: "bell.fill")
-                .foregroundStyle(.blue)
-        }
     }
 
     // ── Session history ───────────────────────────────────────────────────────

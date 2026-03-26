@@ -8,6 +8,10 @@ import SwiftUI
 
 struct QuizSetupView: View {
 
+    // ── Dismiss ───────────────────────────────────────────────────────────────
+    // Closes the fullScreenCover when the user taps the × button.
+    @Environment(\.dismiss) private var dismiss
+
     // ── Navigation state ──────────────────────────────────────────────────────
     @State private var path: [QuizRoute] = []
 
@@ -103,6 +107,16 @@ struct QuizSetupView: View {
                 }
             }
             .navigationTitle("Quiz")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
 
             // ── Navigation destinations ────────────────────────────────────
             .navigationDestination(for: QuizRoute.self) { route in
