@@ -10,8 +10,10 @@ import Combine
 
 struct QuizView: View {
 
-    let questions: [QuizQuestion]
-    let mode     : QuizMode
+    let questions    : [QuizQuestion]
+    let mode         : QuizMode
+    let continent    : String
+    let questionCount: Int
     @Binding var path: [QuizRoute]
 
     // ── SwiftData ─────────────────────────────────────────────────────────────
@@ -215,10 +217,12 @@ struct QuizView: View {
         } else {
             saveSession()
             path.append(.results(
-                score    : score,
-                total    : questions.count,
-                mode     : mode,
-                questions: questions
+                score        : score,
+                total        : questions.count,
+                mode         : mode,
+                questions    : questions,
+                continent    : continent,
+                questionCount: questionCount
             ))
         }
     }
@@ -259,7 +263,9 @@ struct QuizView: View {
                 QuizQuestion(prompt: "🇯🇵", correctAnswer: "Japan",
                              choices: ["Japan", "China", "Korea", "Vietnam"].shuffled()),
             ],
-            mode: .flagToCountry,
+            mode         : .flagToCountry,
+            continent    : "All",
+            questionCount: 10,
             path: .constant([.quiz(mode: .flagToCountry, questions: [])])
         )
     }

@@ -8,10 +8,12 @@ import SwiftUI
 
 struct QuizResultView: View {
 
-    let score    : Int
-    let total    : Int
-    let mode     : QuizMode
-    let questions: [QuizQuestion]
+    let score        : Int
+    let total        : Int
+    let mode         : QuizMode
+    let questions    : [QuizQuestion]
+    let continent    : String
+    let questionCount: Int
     @Binding var path: [QuizRoute]
 
     // ── Derived values ────────────────────────────────────────────────────────
@@ -89,22 +91,16 @@ struct QuizResultView: View {
             VStack(spacing: 12) {
 
                 Button {
-                    // Build fresh QuizQuestion instances so each question gets
-                    // a brand-new UUID.  The `.id()` modifier on QuizView (in
-                    // QuizSetupView's navigationDestination) compares those UUIDs;
-                    // when they differ SwiftUI fully destroys and recreates the
-                    // view, resetting every @State var (currentIndex, score, etc.)
-                    // to its default.  Without new UUIDs the IDs look the same
-                    // after a shuffle and SwiftUI reuses the existing QuizView
-                    // with its stale state, which is what caused the frozen screen.
-                    let freshQuestions = questions.shuffled().map { q in
-                        QuizQuestion(
-                            prompt       : q.prompt,
-                            correctAnswer: q.correctAnswer,
-                            choices      : q.choices.shuffled(),
-                            countryName  : q.countryName
-                        )
-                    }
+                    // Generate a completely fresh batch of randomly selected
+                    // countries using the same mode / continent / count config.
+                    // QuizQuestion.generate() produces new UUIDs, so the .id()
+                    // modifier on QuizView forces a full teardown + recreation,
+                    // resetting every @State var (currentIndex, score, timer).
+                    let freshQuestions = QuizQuestion.generate(
+                        mode     : mode,
+                        continent: continent,
+                        count    : questionCount
+                    )
                     path = [.quiz(mode: mode, questions: freshQuestions)]
                 } label: {
                     Label("Play Again", systemImage: "arrow.clockwise")
@@ -161,13 +157,16 @@ struct QuizResultView: View {
 #Preview {
     NavigationStack {
         QuizResultView(
-            score    : 7,
-            total    : 10,
-            mode     : .flagToCountry,
-            questions: [],
-            path     : .constant([
+            score        : 7,
+            total        : 10,
+            mode         : .flagToCountry,
+            questions    : [],
+            continent    : "All",
+            questionCount: 10,
+            path         : .constant([
                 .quiz(mode: .flagToCountry, questions: []),
-                .results(score: 7, total: 10, mode: .flagToCountry, questions: [])
+                .results(score: 7, total: 10, mode: .flagToCountry, questions: [],
+                         continent: "All", questionCount: 10)
             ])
         )
     }

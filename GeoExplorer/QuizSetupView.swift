@@ -137,73 +137,34 @@ struct QuizSetupView: View {
                     // questions.map { $0.id } produces a [UUID] whose value
                     // is unique for every new quiz round (Play Again creates
                     // fresh QuizQuestion instances with new UUIDs).
-                    QuizView(questions: questions, mode: mode, path: $path)
-                        .id(questions.map { $0.id })
-                case .results(let score, let total, let mode, let questions):
-                    QuizResultView(score: score, total: total, mode: mode, questions: questions, path: $path)
+                    QuizView(
+                        questions    : questions,
+                        mode         : mode,
+                        continent    : selectedContinent,
+                        questionCount: actualCount,
+                        path         : $path
+                    )
+                    .id(questions.map { $0.id })
+                case .results(let score, let total, let mode, let questions, let continent, let questionCount):
+                    QuizResultView(
+                        score        : score,
+                        total        : total,
+                        mode         : mode,
+                        questions    : questions,
+                        continent    : continent,
+                        questionCount: questionCount,
+                        path         : $path
+                    )
                 }
             }
         }
     }
 
     // ── Question generation ────────────────────────────────────────────────────
-    // Builds one QuizQuestion per country in the shuffled slice.
-    // Each question gets 1 correct answer + 3 random wrong answers, then shuffled.
+    // Delegates to the static generator in Quiz.swift so QuizResultView
+    // (Play Again) can produce a fresh batch with the exact same logic.
     private func generateQuestions() -> [QuizQuestion] {
-        let pool  = availableCountries.shuffled()
-        let slice = Array(pool.prefix(actualCount))
-
-        return slice.map { country in
-            let prompt : String
-            let correct: String
-            let wrongPool: [String]     // pool to draw 3 wrong answers from
-
-            switch mode {
-
-            case .flagToCountry:
-                // Show a flag, guess the country name.
-                prompt    = country.flag
-                correct   = country.name
-                wrongPool = countries
-                    .filter { $0.name != country.name }
-                    .map    { $0.name }
-
-            case .countryToFlag:
-                // Show a country name, guess the flag.
-                prompt    = country.name
-                correct   = country.flag
-                wrongPool = countries
-                    .filter { $0.flag != country.flag }
-                    .map    { $0.flag }
-
-            case .countryToCapital:
-                // Show flag + name, guess the capital.
-                prompt    = "\(country.flag)  \(country.name)"
-                correct   = country.capital
-                wrongPool = countries
-                    .filter { $0.capital != country.capital }
-                    .map    { $0.capital }
-
-            case .capitalToCountry:
-                // Show the capital city, guess the country name.
-                prompt    = country.capital
-                correct   = country.name
-                wrongPool = countries
-                    .filter { $0.name != country.name }
-                    .map    { $0.name }
-            }
-
-            // Pick 3 random wrong answers, combine with the correct one, shuffle.
-            let wrongs  = Array(wrongPool.shuffled().prefix(3))
-            let choices = ([correct] + wrongs).shuffled()
-
-            return QuizQuestion(
-                prompt       : prompt,
-                correctAnswer: correct,
-                choices      : choices,
-                countryName  : country.name
-            )
-        }
+        QuizQuestion.generate(mode: mode, continent: selectedContinent, count: questionCount)
     }
 }
 

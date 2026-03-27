@@ -35,12 +35,67 @@ struct QuizQuestion: Identifiable, Hashable {
 
     static func == (lhs: QuizQuestion, rhs: QuizQuestion) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
+
+    // ── Question generation ────────────────────────────────────────────────────
+    // Shared by QuizSetupView (initial quiz) and QuizResultView (Play Again).
+    // `continent` == "All" means no filtering.
+    // `count` is clamped to the pool size automatically.
+    static func generate(mode: QuizMode, continent: String, count: Int) -> [QuizQuestion] {
+        let allCountries = DataLoader.loadCountries()
+        let pool = continent == "All"
+            ? allCountries
+            : allCountries.filter { $0.continent == continent }
+
+        let actualCount = min(count, pool.count)
+        let slice = Array(pool.shuffled().prefix(actualCount))
+
+        return slice.map { country in
+            let prompt    : String
+            let correct   : String
+            let wrongPool : [String]
+
+            switch mode {
+            case .flagToCountry:
+                prompt    = country.flag
+                correct   = country.name
+                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+
+            case .countryToFlag:
+                prompt    = country.name
+                correct   = country.flag
+                wrongPool = allCountries.filter { $0.flag != country.flag }.map { $0.flag }
+
+            case .countryToCapital:
+                prompt    = "\(country.flag)  \(country.name)"
+                correct   = country.capital
+                wrongPool = allCountries.filter { $0.capital != country.capital }.map { $0.capital }
+
+            case .capitalToCountry:
+                prompt    = country.capital
+                correct   = country.name
+                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+            }
+
+            let wrongs  = Array(wrongPool.shuffled().prefix(3))
+            let choices = ([correct] + wrongs).shuffled()
+
+            return QuizQuestion(
+                prompt       : prompt,
+                correctAnswer: correct,
+                choices      : choices,
+                countryName  : country.name
+            )
+        }
+    }
 }
 
 // ── Navigation routes ─────────────────────────────────────────────────────────
 // `.quiz` now carries the mode alongside the questions so QuizView and
 // QuizResultView can save sessions with the correct mode label.
+// `.results` carries `continent` and `questionCount` so Play Again can
+// generate a completely fresh batch without going back to setup.
 enum QuizRoute: Hashable {
     case quiz(mode: QuizMode, questions: [QuizQuestion])
-    case results(score: Int, total: Int, mode: QuizMode, questions: [QuizQuestion])
+    case results(score: Int, total: Int, mode: QuizMode, questions: [QuizQuestion],
+                 continent: String, questionCount: Int)
 }
