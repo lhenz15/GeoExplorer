@@ -101,8 +101,14 @@ struct HomeView: View {
 
                     VStack(spacing: 20) {
                         statsRow
-                        masterySection
                         featureSection
+                        NavigationLink {
+                            FavoritesView(embedded: true)
+                        } label: {
+                            favouritesStrip
+                        }
+                        .buttonStyle(NavLinkPressStyle())
+                        masterySection
                         recentActivitySection
                     }
                     .padding(16)
@@ -301,13 +307,6 @@ struct HomeView: View {
                 .scaleOnPress()
             }
 
-            // ── Favourites — full-width strip ─────────────────────────────────
-            NavigationLink {
-                FavoritesView(embedded: true)
-            } label: {
-                favouritesStrip
-            }
-            .buttonStyle(NavLinkPressStyle())
         }
     }
 
