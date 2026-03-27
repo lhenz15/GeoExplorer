@@ -286,6 +286,7 @@ struct HomeView: View {
             } label: {
                 exploreCard
             }
+            .buttonStyle(NavLinkPressStyle())
 
             // ── Flashcards + Quiz — side by side ──────────────────────────────
             HStack(spacing: 12) {
@@ -306,6 +307,7 @@ struct HomeView: View {
             } label: {
                 favouritesStrip
             }
+            .buttonStyle(NavLinkPressStyle())
         }
     }
 
@@ -338,7 +340,6 @@ struct HomeView: View {
             )
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .scaleOnPress()
     }
 
     // Small square card used for Flashcards and Quiz.
@@ -382,7 +383,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .scaleOnPress()
     }
 
     // ── Recent activity ───────────────────────────────────────────────────────

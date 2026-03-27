@@ -132,6 +132,27 @@ extension View {
     func scaleOnPress() -> some View { modifier(ScaleOnPress()) }
 }
 
+// ── Scale-on-press button style ───────────────────────────────────────────────
+//
+// A ButtonStyle is the correct way to add press animations to NavigationLink
+// and Button controls. Unlike a ViewModifier with a DragGesture, ButtonStyle
+// uses `configuration.isPressed` — a value the system provides directly —
+// so it never competes with the navigation gesture recogniser.
+//
+// Use this on NavigationLink labels:
+//   NavigationLink { Destination() } label: { myCard }
+//   .buttonStyle(NavLinkPressStyle())
+struct NavLinkPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(
+                .spring(response: 0.25, dampingFraction: 0.65),
+                value: configuration.isPressed
+            )
+    }
+}
+
 // ── Screen-appear transition ──────────────────────────────────────────────────
 //
 // Fades and lightly scales in the view's content when it first appears.
