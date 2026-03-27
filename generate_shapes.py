@@ -120,11 +120,14 @@ def download_geojson(url: str) -> dict:
         return json.loads(r.read().decode())
 
 
-def largest_polygons(geometry: dict, keep: int = 5) -> list[list]:
+def largest_polygons(geometry: dict, keep: int = 50) -> list[list]:
     """
     Returns up to `keep` outer rings from a Polygon or MultiPolygon geometry.
-    Rings are sorted largest-first (by vertex count) so we drop tiny island
-    specks for countries with many overseas territories.
+    Rings are sorted largest-first (by vertex count) so tiny specks are
+    dropped last if the cap is ever hit.
+
+    50 is safely above the maximum polygon count in the 110m dataset (13 for
+    Indonesia), so in practice every island of every archipelago is included.
 
     Each returned ring is a list of [lon, lat] pairs.
     """
