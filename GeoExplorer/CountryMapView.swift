@@ -48,33 +48,34 @@ struct CountryMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView()
 
-        // ── Suppress all labels (iOS 16+) ─────────────────────────────────────
-        // MKStandardMapConfiguration is the modern replacement for mapType.
-        // emphasisStyle: .muted produces a minimal basemap with no country
-        // names, city names, or region labels — critical for a quiz where
-        // the answer must not appear on screen.
-        // pointOfInterestFilter: .excludingAll removes all POI icons/labels.
-        if #available(iOS 16.0, *) {
-            let config                  = MKStandardMapConfiguration(elevationStyle: .flat,
-                                                                      emphasisStyle : .muted)
-            config.pointOfInterestFilter = .excludingAll
-            config.showsTraffic          = false
-            map.preferredConfiguration   = config
-        } else {
-            // Fallback for iOS 15 — still muted but labels may show
-            map.mapType             = .mutedStandard
-            map.pointOfInterestFilter = .excludingAll
-        }
+        // ── Map configuration (iOS 16+) ───────────────────────────────────────
+        // MKStandardMapConfiguration is the modern API for describing the
+        // map's visual style, replacing the legacy `mapType` property.
+        //
+        // elevationStyle: .flat  — renders the map as a flat 2D plane with
+        //   no terrain relief shading.  Keeps the basemap neutral so the
+        //   indigo polygon stands out clearly.
+        //
+        // pointOfInterestFilter: .excludingAll  — removes every POI icon
+        //   and its associated label (cafés, monuments, hospitals, etc.).
+        //
+        // showsTraffic: false  — hides the traffic overlay.
+        //
+        // preferredConfiguration  — the iOS 16+ replacement for mapType;
+        //   assigning here activates the configuration immediately.
+        //
+        // selectableMapFeatures = []  — prevents any map feature from
+        //   becoming tappable or showing a callout/highlight when touched.
+        //   Without this, tapping the map could reveal a country name in
+        //   a callout bubble.
+        let config                   = MKStandardMapConfiguration(elevationStyle: .flat)
+        config.pointOfInterestFilter = .excludingAll
+        config.showsTraffic          = false
+        map.preferredConfiguration   = config
+        map.selectableMapFeatures    = []
 
-        // Belt-and-suspenders: these older properties are checked in addition
-        // to the configuration above.  They have no effect on iOS 16+ when
-        // preferredConfiguration is set, but they guard against any edge case
-        // where MapKit falls back to the legacy rendering path.
-        map.showsPointsOfInterest = false
-        map.showsTraffic          = false
-        map.showsBuildings        = false
-        map.showsCompass          = false
-        map.showsScale            = false
+        map.showsCompass  = false
+        map.showsScale    = false
 
         // Lock the camera — students tap answer buttons, not the map.
         map.isScrollEnabled = false
