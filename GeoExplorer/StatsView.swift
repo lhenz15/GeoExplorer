@@ -163,7 +163,7 @@ struct StatsView: View {
                         Text(mode.rawValue)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .frame(width: 130, alignment: .leading)
+                            .frame(width: 140, alignment: .leading)
                         ProgressView(value: Double(count), total: Double(totalCountries))
                             .tint(AppColors.accent)
                         Text("\(count)")

@@ -11,6 +11,7 @@ enum QuizMode: String, CaseIterable {
     case countryToFlag    = "Country → Flag"
     case countryToCapital = "Country → Capital"
     case capitalToCountry = "Capital → Country"
+    case mapToCountry     = "Map → Country"
 }
 
 // ── A single quiz question ─────────────────────────────────────────────────────
@@ -42,9 +43,15 @@ struct QuizQuestion: Identifiable, Hashable {
     // `count` is clamped to the pool size automatically.
     static func generate(mode: QuizMode, continent: String, count: Int) -> [QuizQuestion] {
         let allCountries = DataLoader.loadCountries()
-        let pool = continent == "All"
+        var pool = continent == "All"
             ? allCountries
             : allCountries.filter { $0.continent == continent }
+
+        // Map quiz can only use countries that have polygon shape data.
+        // ShapeLoader.shapeNames is a Set<String> so the lookup is O(1).
+        if mode == .mapToCountry {
+            pool = pool.filter { ShapeLoader.shapeNames.contains($0.name) }
+        }
 
         let actualCount = min(count, pool.count)
         let slice = Array(pool.shuffled().prefix(actualCount))
@@ -72,6 +79,14 @@ struct QuizQuestion: Identifiable, Hashable {
 
             case .capitalToCountry:
                 prompt    = country.capital
+                correct   = country.name
+                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+
+            case .mapToCountry:
+                // prompt = country name so MapQuizView can look up the shape.
+                // correct = country name (the answer the user picks).
+                // wrong answers are other country names from the full pool.
+                prompt    = country.name
                 correct   = country.name
                 wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
             }

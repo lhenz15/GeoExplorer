@@ -34,24 +34,26 @@ class CountryProgress {
     var countryToFlag    : ModeProgress
     var countryToCapital : ModeProgress
     var capitalToCountry : ModeProgress
+    var mapToCountry     : ModeProgress
 
     // ── Gold badge ────────────────────────────────────────────────────────────
     // Computed — not stored in the database.
-    // Collecting the four structs in an array lets us use `.filter` and
-    // `.count` in one line instead of writing out four separate `if` checks.
+    // Now requires mastery in 3 of 5 modes (raised from 2 of 4) to reflect
+    // the broader range of skills tested by the new Map → Country mode.
     var hasGoldBadge: Bool {
-        [flagToCountry, countryToFlag, countryToCapital, capitalToCountry]
+        [flagToCountry, countryToFlag, countryToCapital, capitalToCountry, mapToCountry]
             .filter { $0.isMastered }
-            .count >= 2
+            .count >= 3
     }
 
     init(countryName: String) {
-        self.countryName     = countryName
+        self.countryName      = countryName
         // Every mode starts from scratch — zero credits, not mastered.
         self.flagToCountry    = ModeProgress()
         self.countryToFlag    = ModeProgress()
         self.countryToCapital = ModeProgress()
         self.capitalToCountry = ModeProgress()
+        self.mapToCountry     = ModeProgress()
     }
 
     // ── Mode accessors ────────────────────────────────────────────────────────
@@ -67,6 +69,7 @@ class CountryProgress {
         case .countryToFlag:    return countryToFlag
         case .countryToCapital: return countryToCapital
         case .capitalToCountry: return capitalToCountry
+        case .mapToCountry:     return mapToCountry
         }
     }
 
@@ -79,6 +82,7 @@ class CountryProgress {
         case .countryToFlag:    countryToFlag    = mp
         case .countryToCapital: countryToCapital = mp
         case .capitalToCountry: capitalToCountry = mp
+        case .mapToCountry:     mapToCountry     = mp
         }
     }
 }

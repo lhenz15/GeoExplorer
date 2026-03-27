@@ -239,8 +239,8 @@ struct HomeView: View {
                         Text(mode.rawValue)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            // Fixed width keeps all four bars left-aligned.
-                            .frame(width: 130, alignment: .leading)
+                            // Fixed width keeps all five bars left-aligned.
+                            .frame(width: 140, alignment: .leading)
                         ProgressView(value: Double(count), total: 195)
                             .tint(AppColors.accent)
                         Text("\(count)")

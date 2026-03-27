@@ -27,9 +27,14 @@ struct QuizSetupView: View {
 
     // ── Derived values ────────────────────────────────────────────────────────
     private var availableCountries: [Country] {
-        selectedContinent == "All"
+        var pool = selectedContinent == "All"
             ? countries
             : countries.filter { $0.continent == selectedContinent }
+        // Map quiz only shows countries that have polygon shape data.
+        if mode == .mapToCountry {
+            pool = pool.filter { ShapeLoader.shapeNames.contains($0.name) }
+        }
+        return pool
     }
 
     // Clamp to pool size so we never ask for more questions than countries exist.
@@ -137,14 +142,25 @@ struct QuizSetupView: View {
                     // questions.map { $0.id } produces a [UUID] whose value
                     // is unique for every new quiz round (Play Again creates
                     // fresh QuizQuestion instances with new UUIDs).
-                    QuizView(
-                        questions    : questions,
-                        mode         : mode,
-                        continent    : selectedContinent,
-                        questionCount: actualCount,
-                        path         : $path
-                    )
-                    .id(questions.map { $0.id })
+                    if mode == .mapToCountry {
+                        MapQuizView(
+                            questions    : questions,
+                            mode         : mode,
+                            continent    : selectedContinent,
+                            questionCount: actualCount,
+                            path         : $path
+                        )
+                        .id(questions.map { $0.id })
+                    } else {
+                        QuizView(
+                            questions    : questions,
+                            mode         : mode,
+                            continent    : selectedContinent,
+                            questionCount: actualCount,
+                            path         : $path
+                        )
+                        .id(questions.map { $0.id })
+                    }
                 case .results(let score, let total, let mode, let questions, let continent, let questionCount):
                     QuizResultView(
                         score        : score,
