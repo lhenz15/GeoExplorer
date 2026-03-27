@@ -103,7 +103,7 @@ NE_TO_APP = {
     "S. Sudan":                          "South Sudan",
     "South Sudan":                       "South Sudan",
     "United Arab Emirates":              "United Arab Emirates",
-    "W. Sahara":                         "Morocco",    # disputed — skip or map
+    "W. Sahara":                         None,          # disputed territory — skip
     "Somaliland":                        None,          # unrecognised — skip
     "N. Cyprus":                         None,          # skip
     "Taiwan":                            "Taiwan",

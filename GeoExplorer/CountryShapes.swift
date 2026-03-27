@@ -44,7 +44,10 @@ enum ShapeLoader {
         else {
             return [:]
         }
-        return Dictionary(uniqueKeysWithValues: list.map { ($0.name, $0) })
+        // uniquingKeysWith keeps the first entry when two shapes share a name.
+        // This prevents a crash if the JSON ever contains a duplicate key
+        // (e.g. a disputed territory mistakenly mapped to an existing country).
+        return Dictionary(list.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
     }()
 
     /// Set of country names that have shape data — used in Quiz.swift to
