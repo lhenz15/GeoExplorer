@@ -16,7 +16,6 @@ struct QuizView: View {
 
     // ── SwiftData ─────────────────────────────────────────────────────────────
     @Environment(\.modelContext) private var modelContext
-    @Query private var progressList: [CountryProgress]
 
     // ── Timer ─────────────────────────────────────────────────────────────────
     private let ticker           = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
@@ -28,10 +27,6 @@ struct QuizView: View {
     @State private var timeRemaining        = 1.0
     @State private var selectedAnswer: String? = nil
     @State private var isShowingFeedback    = false
-
-    // Track which countries were answered correctly so we can update
-    // CountryProgress for each one at the end of the session.
-    @State private var correctCountryNames: [String] = []
 
     // Record when the quiz started to calculate total time taken.
     @State private var startTime            = Date()
@@ -175,14 +170,26 @@ struct QuizView: View {
         guard !isShowingFeedback else { return }
         selectedAnswer    = answer
         isShowingFeedback = true
-        if answer == currentQuestion.correctAnswer {
+
+        let isCorrect = (answer == currentQuestion.correctAnswer)
+        if isCorrect {
             score += 1
-            correctCountryNames.append(currentQuestion.countryName)
             // Only trigger haptics for deliberate taps, not timer timeouts.
             if answer != nil { triggerHaptic(correct: true) }
         } else if answer != nil {
             triggerHaptic(correct: false)
         }
+
+        // Record this answer in the mastery system immediately.
+        // For timer timeouts (answer == nil), isCorrect is false, which
+        // correctly marks the country as "wrong this session."
+        MasteryManager.recordAnswer(
+            countryName: currentQuestion.countryName,
+            mode       : mode,
+            isCorrect  : isCorrect,
+            in         : modelContext
+        )
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             advanceQuestion()
         }
@@ -220,7 +227,7 @@ struct QuizView: View {
     private func saveSession() {
         let timeTaken = Date().timeIntervalSince(startTime)
 
-        // Insert a new QuizSession row.
+        // Insert a new QuizSession row for the Stats screen.
         modelContext.insert(QuizSession(
             mode     : mode.rawValue,
             score    : score,
@@ -228,15 +235,15 @@ struct QuizView: View {
             timeTaken: timeTaken
         ))
 
-        // For each correctly answered country, increment (or create) its progress row.
-        for name in correctCountryNames {
-            guard !name.isEmpty else { continue }
-            if let existing = progressList.first(where: { $0.countryName == name }) {
-                existing.correctCount += 1
-            } else {
-                modelContext.insert(CountryProgress(countryName: name, correctCount: 1))
-            }
-        }
+        // Award mastery credits and reset per-session flags.
+        // We pass every question's countryName (not just correct ones) so
+        // MasteryManager can also reset the wrongThisSession flag for
+        // countries the user got wrong.
+        MasteryManager.finishSession(
+            for: questions.map { $0.countryName },
+            mode: mode,
+            in: modelContext
+        )
 
         StreakManager.recordStudySession()
     }

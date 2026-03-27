@@ -44,8 +44,14 @@ struct StatsView: View {
     private let totalCountries = DataLoader.loadCountries().count
 
     // ── Derived values ────────────────────────────────────────────────────────
+    // A country counts as mastered once it earns the gold badge
+    // (mastered in at least 2 of the 4 quiz modes).
     private var masteredCount: Int {
-        progress.filter { $0.isMastered }.count
+        progress.filter { $0.hasGoldBadge }.count
+    }
+
+    private func masteredForMode(_ mode: QuizMode) -> Int {
+        progress.filter { $0.modeProgress(for: mode).isMastered }.count
     }
 
     // Best score (highest percentage) for a given mode.
@@ -69,6 +75,7 @@ struct StatsView: View {
                 VStack(spacing: 20) {
 
                     heroRow
+                    masteryBreakdownSection
                     personalBestsSection
                     historySection
 
@@ -120,6 +127,56 @@ struct StatsView: View {
         .padding(.vertical, 20)
         .background(AppColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    // ── Mastery breakdown ─────────────────────────────────────────────────────
+    @ViewBuilder
+    private var masteryBreakdownSection: some View {
+        GroupBox {
+            VStack(spacing: 12) {
+
+                // Overall gold-badge row
+                HStack(spacing: 10) {
+                    Text("⭐")
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Gold Badge")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(masteredCount) / \(totalCountries)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        ProgressView(value: Double(masteredCount), total: Double(totalCountries))
+                            .tint(.yellow)
+                    }
+                }
+
+                Divider()
+
+                // Per-mode rows
+                ForEach(QuizMode.allCases, id: \.self) { mode in
+                    let count = masteredForMode(mode)
+                    HStack(spacing: 8) {
+                        Text(mode.rawValue)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 130, alignment: .leading)
+                        ProgressView(value: Double(count), total: Double(totalCountries))
+                            .tint(AppColors.accent)
+                        Text("\(count)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 26, alignment: .trailing)
+                    }
+                }
+            }
+        } label: {
+            Label("Mastery Breakdown", systemImage: "star.fill")
+                .foregroundStyle(.yellow)
+        }
     }
 
     // ── Personal bests ────────────────────────────────────────────────────────

@@ -71,8 +71,14 @@ struct HomeView: View {
         return "\(Int(best.percentage * 100))%"
     }
 
+    // Countries with ⭐ gold badge (mastered in ≥2 modes).
     private var masteredCount: Int {
-        progress.filter { $0.isMastered }.count
+        progress.filter { $0.hasGoldBadge }.count
+    }
+
+    // Per-mode mastery count — used in the mastery breakdown section.
+    private func masteredForMode(_ mode: QuizMode) -> Int {
+        progress.filter { $0.modeProgress(for: mode).isMastered }.count
     }
 
     // Calendar.current.component extracts the hour (0–23) from right now.
@@ -95,6 +101,7 @@ struct HomeView: View {
 
                     VStack(spacing: 20) {
                         statsRow
+                        masterySection
                         featureSection
                         recentActivitySection
                     }
@@ -173,6 +180,73 @@ struct HomeView: View {
             statCard(value: bestScoreText,        label: "Best Score",  icon: "star.fill",           color: .yellow)
             statCard(value: "\(masteredCount)",   label: "Mastered",    icon: "checkmark.seal.fill", color: .green)
             statCard(value: "\(favorites.count)", label: "Favourites",  icon: "heart.fill",          color: .pink)
+        }
+    }
+
+    // ── Mastery section ───────────────────────────────────────────────────────
+    // Two things are shown here:
+    //   1. Overall gold-badge % (countries mastered in ≥2 modes / 195).
+    //   2. Per-mode breakdown — one ProgressView row for each of the 4 modes.
+    //
+    // ── What is ProgressView(value:total:)? ───────────────────────────────────
+    // A built-in SwiftUI control that draws a filled horizontal bar.
+    // `value` is the current amount, `total` is the maximum.
+    // SwiftUI divides value/total to get the fill fraction (0.0 – 1.0).
+    // `.tint()` controls the colour of the filled portion.
+    private var masterySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            Text("Mastery")
+                .font(.title3)
+                .fontWeight(.bold)
+
+            VStack(spacing: 14) {
+
+                // ── Overall gold badge ────────────────────────────────────
+                HStack(spacing: 10) {
+                    Text("⭐")
+                        .font(.title3)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Gold Badge")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(masteredCount) / 195 (\(Int(Double(masteredCount) / 195.0 * 100))%)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        ProgressView(value: Double(masteredCount), total: 195)
+                            .tint(.yellow)
+                    }
+                }
+
+                Divider()
+
+                // ── Per-mode breakdown ────────────────────────────────────
+                // ForEach over QuizMode.allCases iterates every mode in the
+                // order they are declared in the enum.
+                ForEach(QuizMode.allCases, id: \.self) { mode in
+                    let count = masteredForMode(mode)
+                    HStack(spacing: 8) {
+                        Text(mode.rawValue)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            // Fixed width keeps all four bars left-aligned.
+                            .frame(width: 130, alignment: .leading)
+                        ProgressView(value: Double(count), total: 195)
+                            .tint(AppColors.accent)
+                        Text("\(count)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 26, alignment: .trailing)
+                    }
+                }
+            }
+            .padding(16)
+            .background(AppColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 

@@ -19,10 +19,6 @@ struct FlashcardView: View {
     let cards: [Flashcard]
     @Binding var path: [FlashcardRoute]
 
-    // ── SwiftData ─────────────────────────────────────────────────────────────
-    @Environment(\.modelContext) private var modelContext
-    @Query private var progressList: [CountryProgress]
-
     // ── Local state ───────────────────────────────────────────────────────────
     @State private var currentIndex = 0
     @State private var isFlipped    = false
@@ -192,17 +188,10 @@ struct FlashcardView: View {
     }
 
     // ── Progress saving ───────────────────────────────────────────────────────
-    // Called when the user taps Finish. Every card studied counts as one
-    // correct answer towards mastery (3 correct = mastered).
+    // Called when the user taps Finish.
+    // Flashcard sessions count toward the daily streak but not toward
+    // per-mode mastery credits (those are quiz-only).
     private func saveProgress() {
-        for card in cards {
-            guard !card.countryName.isEmpty else { continue }
-            if let existing = progressList.first(where: { $0.countryName == card.countryName }) {
-                existing.correctCount += 1
-            } else {
-                modelContext.insert(CountryProgress(countryName: card.countryName, correctCount: 1))
-            }
-        }
         StreakManager.recordStudySession()
     }
 }

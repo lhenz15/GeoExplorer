@@ -20,6 +20,14 @@ struct CountryListView: View {
     /// (e.g. HomeView). Set to `false` (the default) when used as a tab root.
     var embedded: Bool = false
 
+    // Watch the mastery database so the ⭐ badges update live after a quiz.
+    // We compute a Set<String> of mastered names for O(1) lookup in the list.
+    @Query private var allProgress: [CountryProgress]
+
+    private var goldBadgeNames: Set<String> {
+        Set(allProgress.filter { $0.hasGoldBadge }.map { $0.countryName })
+    }
+
     @State private var searchText = ""
     @State private var selectedContinent = "All"
 
@@ -105,6 +113,14 @@ struct CountryListView: View {
                             }
 
                             Spacer()
+
+                            // ⭐ gold badge — visible once the country is
+                            // mastered in at least 2 of the 4 quiz modes.
+                            if goldBadgeNames.contains(country.name) {
+                                Text("⭐")
+                                    .font(.subheadline)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
 
                             if selectedContinent == "All" {
                                 Text(country.continent)
