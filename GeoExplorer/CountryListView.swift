@@ -20,28 +20,26 @@ struct CountryListView: View {
     /// (e.g. HomeView). Set to `false` (the default) when used as a tab root.
     var embedded: Bool = false
 
+    @EnvironmentObject var lang: LanguageManager
+
     // Watch the mastery database so the ⭐ badges update live after a quiz.
-    // We compute a Set<String> of mastered names for O(1) lookup in the list.
+    // We compute a Set<String> of mastered ids for O(1) lookup in the list.
     @Query private var allProgress: [CountryProgress]
 
-    private var goldBadgeNames: Set<String> {
+    private var goldBadgeIds: Set<String> {
         Set(allProgress.filter { $0.hasGoldBadge }.map { $0.countryName })
     }
 
-    @State private var searchText = ""
-    @State private var selectedContinent = "All"
-
-    let continents = ["All", "Africa", "Americas", "Asia", "Europe", "Oceania"]
-
-    private let countries = DataLoader.loadCountries()
+    @State private var searchText        = ""
+    @State private var selectedContinent = "all"
 
     var filteredCountries: [Country] {
-        countries.filter { country in
+        lang.countries.filter { country in
             let matchesSearch = searchText.isEmpty
                 || country.name.localizedCaseInsensitiveContains(searchText)
                 || country.capital.localizedCaseInsensitiveContains(searchText)
 
-            let matchesContinent = selectedContinent == "All"
+            let matchesContinent = selectedContinent == "all"
                 || country.continent == selectedContinent
 
             return matchesSearch && matchesContinent
@@ -49,8 +47,6 @@ struct CountryListView: View {
     }
 
     var body: some View {
-        // When embedded, skip the NavigationStack — the parent already provides one.
-        // When standalone (tab root), wrap in a NavigationStack as before.
         if embedded {
             listContent
         } else {
@@ -61,8 +57,6 @@ struct CountryListView: View {
     }
 
     // ── Extracted list content ────────────────────────────────────────────────
-    // @ViewBuilder allows conditional returns inside a computed property.
-    // Everything that used to be inside `NavigationStack { }` lives here.
     @ViewBuilder
     private var listContent: some View {
         VStack(spacing: 0) {
@@ -70,20 +64,20 @@ struct CountryListView: View {
             // ── Continent filter pills ──────────────────────────────────────
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(continents, id: \.self) { continent in
-                        Button(continent) {
-                            selectedContinent = continent
+                    ForEach(lang.continents) { continent in
+                        Button(continent.name) {
+                            selectedContinent = continent.id
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(selectedContinent == continent
+                        .background(selectedContinent == continent.id
                                     ? AppColors.accent
                                     : AppColors.surface)
-                        .foregroundStyle(selectedContinent == continent
+                        .foregroundStyle(selectedContinent == continent.id
                                          ? Color.white
                                          : Color.primary)
                         .clipShape(Capsule())
-                        .fontWeight(selectedContinent == continent ? .semibold : .regular)
+                        .fontWeight(selectedContinent == continent.id ? .semibold : .regular)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -116,20 +110,21 @@ struct CountryListView: View {
 
                             // ⭐ gold badge — visible once the country is
                             // mastered in at least 2 of the 4 quiz modes.
-                            if goldBadgeNames.contains(country.name) {
+                            // Matched by country.id (stable English key).
+                            if goldBadgeIds.contains(country.id) {
                                 Text("⭐")
                                     .font(.subheadline)
                                     .transition(.scale.combined(with: .opacity))
                             }
 
-                            if selectedContinent == "All" {
-                                Text(country.continent)
+                            if selectedContinent == "all" {
+                                Text(lang.continentName(for: country.continent))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
 
-                            FavoriteButton(countryName: country.name)
+                            FavoriteButton(countryId: country.id)
                         }
                         .padding(.vertical, 4)
                     }
@@ -137,12 +132,13 @@ struct CountryListView: View {
                 .listStyle(.plain)
             }
         }
-        .navigationTitle("🌍 GeoExplorer")
-        .searchable(text: $searchText, prompt: "Country or capital…")
+        .navigationTitle(lang.t("explore.navTitle"))
+        .searchable(text: $searchText, prompt: lang.t("explore.search"))
     }
 }
 
 #Preview {
     CountryListView()
+        .environmentObject(LanguageManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

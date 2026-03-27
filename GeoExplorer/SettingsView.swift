@@ -1,37 +1,17 @@
 // SettingsView.swift
 // GeoExplorer
 //
-// A simple settings screen with two sections:
-//   1. Daily Reminder — schedule a local notification at a chosen time.
-//   2. Reset Progress — wipe all SwiftData records and streak data.
-//
-// ── New concepts ──────────────────────────────────────────────────────────────
-//
-//   @Environment(\.modelContext)
-//     Gives this view write access to the SwiftData store. We call
-//     `modelContext.delete(object)` on every item in the @Query arrays to
-//     permanently remove them from the database.
-//
-//   .alert(isPresented:)
-//     Presents a modal confirmation dialog. We use it before the destructive
-//     "Reset" action so an accidental tap can't wipe the user's history.
-//     The `role: .destructive` label turns the button text red, signalling
-//     danger to the user — a standard iOS pattern.
-//
-//   UserDefaults.standard.removeObject(forKey:)
-//     Deletes a key entirely from UserDefaults. Different from setting it
-//     to 0: removeObject means the key won't exist, so any code that checks
-//     "has the user studied before?" gets a clean slate.
-//
-//   forEach on a SwiftData @Query array
-//     `sessions.forEach { modelContext.delete($0) }` is a compact shorthand
-//     for looping over every session and deleting it. `$0` is Swift's
-//     automatic name for the first closure argument.
+// Settings screen with three sections:
+//   1. Language     — switch between English and Spanish.
+//   2. Daily Reminder — schedule a local notification at a chosen time.
+//   3. Reset Progress — wipe all SwiftData records and streak data.
 
 import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
+
+    @EnvironmentObject var lang: LanguageManager
 
     // ── Notification settings ─────────────────────────────────────────────────
     @AppStorage("geoexplorer.notificationsOn") private var notificationsOn = false
@@ -48,10 +28,6 @@ struct SettingsView: View {
     @State private var showResetAlert = false
 
     // ── Reminder time binding ─────────────────────────────────────────────────
-    // DatePicker expects a Binding<Date>, but we store hour and minute as two
-    // separate @AppStorage Ints (so they're easy to read back when scheduling).
-    // This computed binding bridges them: the getter rebuilds a Date from the
-    // stored ints; the setter pulls the new hour/minute back out and saves them.
     private var reminderTimeBinding: Binding<Date> {
         Binding {
             var c      = DateComponents()
@@ -74,12 +50,42 @@ struct SettingsView: View {
         NavigationStack {
             Form {
 
-                // ── Daily reminder ─────────────────────────────────────────────
-                // The Toggle writes to @AppStorage "geoexplorer.notificationsOn".
-                // .onChange fires whenever the value changes so we can request
-                // permission on the first enable, or cancel when disabled.
+                // ── Language section ───────────────────────────────────────────
                 Section {
-                    Toggle("Enable Daily Reminder", isOn: $notificationsOn)
+                    Button {
+                        lang.switchLanguage(to: "en")
+                    } label: {
+                        HStack {
+                            Text(lang.t("settings.language.english"))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if lang.currentLanguage == "en" {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
+                    }
+
+                    Button {
+                        lang.switchLanguage(to: "es")
+                    } label: {
+                        HStack {
+                            Text(lang.t("settings.language.spanish"))
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if lang.currentLanguage == "es" {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(AppColors.accent)
+                            }
+                        }
+                    }
+                } header: {
+                    Text(lang.t("settings.language.header"))
+                }
+
+                // ── Daily reminder ─────────────────────────────────────────────
+                Section {
+                    Toggle(lang.t("settings.reminder.toggle"), isOn: $notificationsOn)
                         .onChange(of: notificationsOn) { _, newValue in
                             if newValue {
                                 NotificationManager.requestPermission { granted in
@@ -87,7 +93,6 @@ struct SettingsView: View {
                                         NotificationManager.scheduleDailyReminder(
                                             hour: reminderHour, minute: reminderMinute)
                                     } else {
-                                        // Permission denied — revert the toggle.
                                         notificationsOn = false
                                     }
                                 }
@@ -98,52 +103,41 @@ struct SettingsView: View {
 
                     if notificationsOn {
                         DatePicker(
-                            "Remind me at",
+                            lang.t("settings.reminder.at"),
                             selection          : reminderTimeBinding,
                             displayedComponents: .hourAndMinute
                         )
                     }
                 } header: {
-                    Text("Daily Reminder")
+                    Text(lang.t("settings.reminder.header"))
                 }
 
                 // ── Reset progress ─────────────────────────────────────────────
-                // `role: .destructive` makes the button text red — iOS convention
-                // for irreversible actions. The actual deletion happens in the
-                // alert's confirmation handler, not here.
                 Section {
-                    Button("Reset All Progress", role: .destructive) {
+                    Button(lang.t("settings.reset.button"), role: .destructive) {
                         showResetAlert = true
                     }
                 } footer: {
-                    Text("Permanently deletes all quiz sessions, mastery records, and saved favourites. Resets your streak to zero.")
+                    Text(lang.t("settings.reset.footer"))
                 }
 
             }
-            .navigationTitle("Settings")
-            // Re-check notification permission each time the screen appears.
-            // The user may have revoked permission in iOS Settings while the
-            // app was in the background, so we sync the toggle.
+            .navigationTitle(lang.t("settings.title"))
             .onAppear {
                 NotificationManager.checkAuthorisation { authorised in
                     if !authorised { notificationsOn = false }
                 }
             }
-            // ── Confirmation alert ─────────────────────────────────────────────
-            // .alert is presented when showResetAlert becomes true.
-            // The Reset button calls resetProgress(); Cancel does nothing.
-            .alert("Reset All Progress?", isPresented: $showResetAlert) {
-                Button("Reset", role: .destructive) { resetProgress() }
-                Button("Cancel", role: .cancel) {}
+            .alert(lang.t("settings.reset.alert.title"), isPresented: $showResetAlert) {
+                Button(lang.t("settings.reset.confirm"), role: .destructive) { resetProgress() }
+                Button(lang.t("settings.reset.cancel"), role: .cancel) {}
             } message: {
-                Text("All quiz history, mastery records, and saved favourites will be permanently deleted. This cannot be undone.")
+                Text(lang.t("settings.reset.alert.message"))
             }
         }
     }
 
     // ── Reset ──────────────────────────────────────────────────────────────────
-    // Deletes every row from every model, then clears the UserDefaults keys
-    // that store the streak counter and the last-study date.
     private func resetProgress() {
         sessions .forEach { modelContext.delete($0) }
         progress .forEach { modelContext.delete($0) }
@@ -156,5 +150,6 @@ struct SettingsView: View {
 // ── Preview ───────────────────────────────────────────────────────────────────
 #Preview {
     SettingsView()
+        .environmentObject(LanguageManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

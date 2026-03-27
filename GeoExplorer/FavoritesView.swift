@@ -2,7 +2,7 @@
 // GeoExplorer
 //
 // Shows only the countries the user has favourited.
-// Mirrors CountryListView but filters to the saved names.
+// Mirrors CountryListView but filters to the saved ids.
 //
 // `embedded` parameter — same pattern as CountryListView:
 //   • false (default) → wraps in NavigationStack for use as a tab root.
@@ -16,21 +16,20 @@ struct FavoritesView: View {
     /// Set to `true` when pushed from HomeView's NavigationStack.
     var embedded: Bool = false
 
+    @EnvironmentObject var lang: LanguageManager
+
     @State private var searchText        = ""
-    @State private var selectedContinent = "All"
-
-    let continents = ["All", "Africa", "Americas", "Asia", "Europe", "Oceania"]
-
-    private let countries = DataLoader.loadCountries()
+    @State private var selectedContinent = "all"
 
     @Query private var favorites: [FavoriteCountry]
 
-    private var favoriteNames: Set<String> {
+    // FavoriteCountry.name stores the stable English country id.
+    private var favoriteIds: Set<String> {
         Set(favorites.map { $0.name })
     }
 
     private var favoriteCountries: [Country] {
-        countries.filter { favoriteNames.contains($0.name) }
+        lang.countries.filter { favoriteIds.contains($0.id) }
     }
 
     private var filteredFavorites: [Country] {
@@ -39,7 +38,7 @@ struct FavoritesView: View {
                 || country.name.localizedCaseInsensitiveContains(searchText)
                 || country.capital.localizedCaseInsensitiveContains(searchText)
 
-            let matchesContinent = selectedContinent == "All"
+            let matchesContinent = selectedContinent == "all"
                 || country.continent == selectedContinent
 
             return matchesSearch && matchesContinent
@@ -64,36 +63,36 @@ struct FavoritesView: View {
                 Spacer()
                 Text("🌍")
                     .font(.system(size: 80))
-                Text("No Favourites Yet")
+                Text(lang.t("favorites.empty.title"))
                     .font(.title2)
                     .fontWeight(.bold)
-                Text("Tap the ♡ on any country\nto save it here.")
+                Text(lang.t("favorites.empty.subtitle"))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
-            .navigationTitle("Favourites")
+            .navigationTitle(lang.t("favorites.title"))
         } else {
             VStack(spacing: 0) {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(continents, id: \.self) { continent in
-                            Button(continent) {
-                                selectedContinent = continent
+                        ForEach(lang.continents) { continent in
+                            Button(continent.name) {
+                                selectedContinent = continent.id
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(selectedContinent == continent
+                            .background(selectedContinent == continent.id
                                         ? AppColors.accent
                                         : AppColors.surface)
-                            .foregroundStyle(selectedContinent == continent
+                            .foregroundStyle(selectedContinent == continent.id
                                              ? Color.white
                                              : Color.primary)
                             .clipShape(Capsule())
-                            .fontWeight(selectedContinent == continent ? .semibold : .regular)
+                            .fontWeight(selectedContinent == continent.id ? .semibold : .regular)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -123,14 +122,14 @@ struct FavoritesView: View {
 
                                 Spacer()
 
-                                if selectedContinent == "All" {
-                                    Text(country.continent)
+                                if selectedContinent == "all" {
+                                    Text(lang.continentName(for: country.continent))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
 
-                                FavoriteButton(countryName: country.name)
+                                FavoriteButton(countryId: country.id)
                             }
                             .padding(.vertical, 4)
                         }
@@ -138,13 +137,14 @@ struct FavoritesView: View {
                     .listStyle(.plain)
                 }
             }
-            .navigationTitle("Favourites")
-            .searchable(text: $searchText, prompt: "Country or capital…")
+            .navigationTitle(lang.t("favorites.title"))
+            .searchable(text: $searchText, prompt: lang.t("favorites.search"))
         }
     }
 }
 
 #Preview {
     FavoritesView()
+        .environmentObject(LanguageManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

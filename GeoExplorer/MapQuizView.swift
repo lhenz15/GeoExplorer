@@ -5,20 +5,6 @@
 // The top 55 % of the screen shows the target country's shape on a muted map.
 // The bottom 45 % shows 4 country-name buttons with the same timer, feedback,
 // and auto-advance behaviour as the regular QuizView.
-//
-// ── Why a separate view instead of reusing QuizView? ─────────────────────────
-// QuizView renders its prompt inside a card (Text or emoji).  Here the prompt
-// IS the map — a UIViewRepresentable that needs to fill a tall region and stay
-// locked while the user reads it.  Cramming that into QuizView's layout would
-// require many special-cases.  A focused, single-purpose view is cleaner and
-// easier to learn from.
-//
-// ── GeometryReader ────────────────────────────────────────────────────────────
-// GeometryReader is a SwiftUI view that gives you the dimensions of its
-// parent container at layout time via a GeometryProxy.  We use it here to
-// split the screen into an exact 55/45 % ratio regardless of device size.
-// Without it we'd have to hard-code pixel heights that break on different
-// iPhones.
 
 import SwiftUI
 import SwiftData
@@ -32,12 +18,12 @@ struct MapQuizView: View {
     let questionCount: Int
     @Binding var path: [QuizRoute]
 
+    @EnvironmentObject var lang: LanguageManager
+
     // ── SwiftData ─────────────────────────────────────────────────────────────
     @Environment(\.modelContext) private var modelContext
 
     // ── Timer ─────────────────────────────────────────────────────────────────
-    // Map questions get 15 seconds — slightly longer than the standard 10 s
-    // because reading a map shape takes more cognitive effort than reading text.
     private let ticker           = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     private let questionDuration = 15.0
 
@@ -62,32 +48,18 @@ struct MapQuizView: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            // ── Timer bar ─────────────────────────────────────────────────────
-            // Identical to QuizView's bar — a thin coloured strip at the top.
             ProgressView(value: timeRemaining)
                 .tint(timerColor)
                 .scaleEffect(x: 1, y: 2.5)
                 .padding(.top, 4)
                 .animation(.linear(duration: 0.05), value: timerColor)
 
-            // ── 55/45 split ───────────────────────────────────────────────────
-            // GeometryReader fills all available space and tells us its size.
-            // We use geo.size.height to compute exact pixel heights for the
-            // map region and the answer region.
             GeometryReader { geo in
                 VStack(spacing: 0) {
 
                     // ── Map (55 %) ────────────────────────────────────────────
-                    // CountryMapView is our UIViewRepresentable bridge.
-                    // We pass currentQuestion.prompt which holds the country
-                    // name — CountryMapView looks that name up in ShapeLoader
-                    // to find the polygon coordinates.
-                    //
-                    // .id(currentQuestion.id) is the same teardown trick used
-                    // in QuizSetupView for QuizView: when the question changes,
-                    // SwiftUI destroys and recreates CountryMapView so
-                    // updateUIView receives a completely fresh MKMapView
-                    // instead of one that might still be animating.
+                    // currentQuestion.prompt = country.id (English name).
+                    // CountryMapView looks up the shape by English name in ShapeLoader.
                     CountryMapView(countryName: currentQuestion.prompt)
                         .frame(height: geo.size.height * 0.55)
                         .id(currentQuestion.id)
@@ -104,12 +76,12 @@ struct MapQuizView: View {
                 }
             }
         }
-        .navigationTitle("Question \(currentIndex + 1) of \(questions.count)")
+        .navigationTitle("\(lang.t("quiz.question.title")) \(currentIndex + 1) \(lang.t("quiz.question.of")) \(questions.count)")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Quit") { path = [] }
+                Button(lang.t("quiz.question.quit")) { path = [] }
                     .foregroundStyle(.red)
             }
         }
@@ -192,15 +164,14 @@ struct MapQuizView: View {
             UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         }
 
+        // countryId is the stable English name used as the MasteryManager key.
         MasteryManager.recordAnswer(
-            countryName: currentQuestion.countryName,
+            countryName: currentQuestion.countryId,
             mode       : mode,
             isCorrect  : isCorrect,
             in         : modelContext
         )
 
-        // Slightly longer delay than QuizView — gives the student time to
-        // look at the map after seeing the correct answer highlighted.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
             advanceQuestion()
         }
@@ -235,7 +206,7 @@ struct MapQuizView: View {
             timeTaken: timeTaken
         ))
         MasteryManager.finishSession(
-            for: questions.map { $0.countryName },
+            for: questions.map { $0.countryId },
             mode: mode,
             in: modelContext
         )
@@ -250,17 +221,18 @@ struct MapQuizView: View {
             questions: [
                 QuizQuestion(prompt: "France",  correctAnswer: "France",
                              choices: ["France","Germany","Spain","Italy"].shuffled(),
-                             countryName: "France"),
+                             countryId: "France"),
                 QuizQuestion(prompt: "Brazil",  correctAnswer: "Brazil",
                              choices: ["Brazil","Argentina","Peru","Colombia"].shuffled(),
-                             countryName: "Brazil"),
+                             countryId: "Brazil"),
             ],
             mode         : .mapToCountry,
-            continent    : "All",
+            continent    : "all",
             questionCount: 10,
             path         : .constant([.quiz(mode: .mapToCountry, questions: [])])
         )
     }
+    .environmentObject(LanguageManager())
     .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self],
                     inMemory: true)
 }

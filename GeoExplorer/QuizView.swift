@@ -16,6 +16,8 @@ struct QuizView: View {
     let questionCount: Int
     @Binding var path: [QuizRoute]
 
+    @EnvironmentObject var lang: LanguageManager
+
     // ── SwiftData ─────────────────────────────────────────────────────────────
     @Environment(\.modelContext) private var modelContext
 
@@ -29,8 +31,6 @@ struct QuizView: View {
     @State private var timeRemaining        = 1.0
     @State private var selectedAnswer: String? = nil
     @State private var isShowingFeedback    = false
-
-    // Record when the quiz started to calculate total time taken.
     @State private var startTime            = Date()
 
     // ── Derived shortcuts ──────────────────────────────────────────────────────
@@ -59,12 +59,12 @@ struct QuizView: View {
             .padding(.bottom, 24)
             .screenAppear()
         }
-        .navigationTitle("Question \(currentIndex + 1) of \(questions.count)")
+        .navigationTitle("\(lang.t("quiz.question.title")) \(currentIndex + 1) \(lang.t("quiz.question.of")) \(questions.count)")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Quit") { path = [] }
+                Button(lang.t("quiz.question.quit")) { path = [] }
                     .foregroundStyle(.red)
             }
         }
@@ -112,7 +112,7 @@ struct QuizView: View {
     // ── Question prompt ───────────────────────────────────────────────────────
     private var promptCard: some View {
         VStack(spacing: 12) {
-            Text("What is this?")
+            Text(lang.t("quiz.question.what"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -176,17 +176,14 @@ struct QuizView: View {
         let isCorrect = (answer == currentQuestion.correctAnswer)
         if isCorrect {
             score += 1
-            // Only trigger haptics for deliberate taps, not timer timeouts.
             if answer != nil { triggerHaptic(correct: true) }
         } else if answer != nil {
             triggerHaptic(correct: false)
         }
 
-        // Record this answer in the mastery system immediately.
-        // For timer timeouts (answer == nil), isCorrect is false, which
-        // correctly marks the country as "wrong this session."
+        // countryId is the stable English name used as the MasteryManager key.
         MasteryManager.recordAnswer(
-            countryName: currentQuestion.countryName,
+            countryName: currentQuestion.countryId,
             mode       : mode,
             isCorrect  : isCorrect,
             in         : modelContext
@@ -197,12 +194,6 @@ struct QuizView: View {
         }
     }
 
-    // ── Haptic feedback ───────────────────────────────────────────────────────
-    // UIImpactFeedbackGenerator drives the Taptic Engine on the device.
-    // .light = a gentle tap, perfect for a correct answer ("nice!").
-    // .heavy = a solid thud, reinforces the "oops" feeling on wrong answers.
-    // We create the generator fresh each call — it's lightweight and Apple
-    // recommends not caching it across interactions.
     private func triggerHaptic(correct: Bool) {
         let style: UIImpactFeedbackGenerator.FeedbackStyle = correct ? .light : .heavy
         UIImpactFeedbackGenerator(style: style).impactOccurred()
@@ -231,7 +222,6 @@ struct QuizView: View {
     private func saveSession() {
         let timeTaken = Date().timeIntervalSince(startTime)
 
-        // Insert a new QuizSession row for the Stats screen.
         modelContext.insert(QuizSession(
             mode     : mode.rawValue,
             score    : score,
@@ -239,12 +229,8 @@ struct QuizView: View {
             timeTaken: timeTaken
         ))
 
-        // Award mastery credits and reset per-session flags.
-        // We pass every question's countryName (not just correct ones) so
-        // MasteryManager can also reset the wrongThisSession flag for
-        // countries the user got wrong.
         MasteryManager.finishSession(
-            for: questions.map { $0.countryName },
+            for: questions.map { $0.countryId },
             mode: mode,
             in: modelContext
         )
@@ -264,10 +250,11 @@ struct QuizView: View {
                              choices: ["Japan", "China", "Korea", "Vietnam"].shuffled()),
             ],
             mode         : .flagToCountry,
-            continent    : "All",
+            continent    : "all",
             questionCount: 10,
             path: .constant([.quiz(mode: .flagToCountry, questions: [])])
         )
     }
+    .environmentObject(LanguageManager())
     .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

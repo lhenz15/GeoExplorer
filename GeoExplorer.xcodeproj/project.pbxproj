@@ -195,6 +195,9 @@
 			);
 			mainGroup = DA0D0AA42F74CCDF0005D929;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DAF1F7902F76BF82005E505B /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DA0D0AAE2F74CCDF0005D929 /* Products */;
 			projectDirPath = "";
@@ -570,6 +573,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DAF1F7902F76BF82005E505B /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.24.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = DA0D0AA52F74CCDF0005D929 /* Project object */;
 }

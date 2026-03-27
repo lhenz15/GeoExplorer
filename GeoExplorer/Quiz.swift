@@ -21,17 +21,18 @@ struct QuizQuestion: Identifiable, Hashable {
     let prompt        : String
     let correctAnswer : String
     let choices       : [String]
-    // The country name is stored separately so progress tracking always
-    // has a consistent key — regardless of what the prompt or answer shows.
-    let countryName   : String
+    // Stable English country id — same regardless of active language.
+    // Passed to MasteryManager so progress records are always keyed on the
+    // English name (= country.id), never on a localised display name.
+    let countryId     : String
 
-    // Custom init with `countryName` defaulting to "" so existing preview
+    // Custom init with `countryId` defaulting to "" so existing preview
     // call sites that omit it continue to compile.
-    init(prompt: String, correctAnswer: String, choices: [String], countryName: String = "") {
+    init(prompt: String, correctAnswer: String, choices: [String], countryId: String = "") {
         self.prompt        = prompt
         self.correctAnswer = correctAnswer
         self.choices       = choices
-        self.countryName   = countryName
+        self.countryId     = countryId
     }
 
     static func == (lhs: QuizQuestion, rhs: QuizQuestion) -> Bool { lhs.id == rhs.id }
@@ -39,18 +40,19 @@ struct QuizQuestion: Identifiable, Hashable {
 
     // ── Question generation ────────────────────────────────────────────────────
     // Shared by QuizSetupView (initial quiz) and QuizResultView (Play Again).
-    // `continent` == "All" means no filtering.
+    // `continent` == "all" means no filtering.
     // `count` is clamped to the pool size automatically.
-    static func generate(mode: QuizMode, continent: String, count: Int) -> [QuizQuestion] {
-        let allCountries = DataLoader.loadCountries()
-        var pool = continent == "All"
-            ? allCountries
-            : allCountries.filter { $0.continent == continent }
+    // `countries` is passed in from LanguageManager so questions use the
+    // active language's localised names.
+    static func generate(mode: QuizMode, continent: String, count: Int, from countries: [Country]) -> [QuizQuestion] {
+        var pool = continent == "all"
+            ? countries
+            : countries.filter { $0.continent == continent }
 
         // Map quiz can only use countries that have polygon shape data.
-        // ShapeLoader.shapeNames is a Set<String> so the lookup is O(1).
+        // ShapeLoader.shapeNames keys are English country names = country.id.
         if mode == .mapToCountry {
-            pool = pool.filter { ShapeLoader.shapeNames.contains($0.name) }
+            pool = pool.filter { ShapeLoader.shapeNames.contains($0.id) }
         }
 
         let actualCount = min(count, pool.count)
@@ -65,30 +67,30 @@ struct QuizQuestion: Identifiable, Hashable {
             case .flagToCountry:
                 prompt    = country.flag
                 correct   = country.name
-                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+                wrongPool = countries.filter { $0.name != country.name }.map { $0.name }
 
             case .countryToFlag:
                 prompt    = country.name
                 correct   = country.flag
-                wrongPool = allCountries.filter { $0.flag != country.flag }.map { $0.flag }
+                wrongPool = countries.filter { $0.flag != country.flag }.map { $0.flag }
 
             case .countryToCapital:
                 prompt    = "\(country.flag)  \(country.name)"
                 correct   = country.capital
-                wrongPool = allCountries.filter { $0.capital != country.capital }.map { $0.capital }
+                wrongPool = countries.filter { $0.capital != country.capital }.map { $0.capital }
 
             case .capitalToCountry:
                 prompt    = country.capital
                 correct   = country.name
-                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+                wrongPool = countries.filter { $0.name != country.name }.map { $0.name }
 
             case .mapToCountry:
-                // prompt = country name so MapQuizView can look up the shape.
-                // correct = country name (the answer the user picks).
-                // wrong answers are other country names from the full pool.
-                prompt    = country.name
+                // prompt = country.id (English) so CountryMapView / ShapeLoader
+                // can find the polygon — shapes are keyed on English names.
+                // correct = country.name (localised) — what the user picks.
+                prompt    = country.id
                 correct   = country.name
-                wrongPool = allCountries.filter { $0.name != country.name }.map { $0.name }
+                wrongPool = countries.filter { $0.name != country.name }.map { $0.name }
             }
 
             let wrongs  = Array(wrongPool.shuffled().prefix(3))
@@ -98,7 +100,7 @@ struct QuizQuestion: Identifiable, Hashable {
                 prompt       : prompt,
                 correctAnswer: correct,
                 choices      : choices,
-                countryName  : country.name
+                countryId    : country.id
             )
         }
     }

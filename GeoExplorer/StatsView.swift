@@ -1,51 +1,25 @@
 // StatsView.swift
 // GeoExplorer
 //
-// Dashboard showing streak, mastery progress, personal bests, notification
-// settings, and a scrollable history of completed quiz sessions.
-//
-// New concepts used here:
-//   • @AppStorage     — property wrapper that reads/writes UserDefaults and
-//                       re-renders the view when the value changes (like @State
-//                       but backed by persistent storage instead of memory).
-//   • @Query with sort — fetches SwiftData rows pre-sorted, so we don't need
-//                       to sort the array ourselves in a computed property.
-//   • GroupBox        — a built-in SwiftUI container that draws a rounded card
-//                       with an optional title label above it.
-//   • Binding { get set } — a custom two-way binding built from closures,
-//                       used here to bridge @AppStorage ints ↔ a Date picker.
+// Dashboard showing streak, mastery progress, personal bests, and session history.
 
 import SwiftUI
 import SwiftData
 
 struct StatsView: View {
 
-    // ── SwiftData ─────────────────────────────────────────────────────────────
+    @EnvironmentObject var lang: LanguageManager
 
-    // Fetch sessions sorted newest-first. SortDescriptor is the SwiftData way
-    // to declare a sort order directly on the @Query — more efficient than
-    // sorting a plain array in a computed property.
+    // ── SwiftData ─────────────────────────────────────────────────────────────
     @Query(sort: [SortDescriptor(\QuizSession.date, order: .reverse)])
     private var sessions: [QuizSession]
 
     @Query private var progress: [CountryProgress]
 
     // ── UserDefaults (via @AppStorage) ────────────────────────────────────────
-    // @AppStorage("key") declares a property backed by UserDefaults.
-    // Reading it returns the stored value (or the default if nothing is saved).
-    // Writing it saves to UserDefaults AND triggers a SwiftUI re-render.
-    //
-    // We share the exact same key string as StreakManager so that when
-    // StreakManager calls UserDefaults.standard.set(...), this view updates.
     @AppStorage(StreakManager.streakKey) private var streak = 0
 
-    // ── Other state ───────────────────────────────────────────────────────────
-    // Total countries loaded from JSON — used to show "X / 195" mastered.
-    private let totalCountries = DataLoader.loadCountries().count
-
     // ── Derived values ────────────────────────────────────────────────────────
-    // A country counts as mastered once it earns the gold badge
-    // (mastered in at least 2 of the 4 quiz modes).
     private var masteredCount: Int {
         progress.filter { $0.hasGoldBadge }.count
     }
@@ -54,14 +28,12 @@ struct StatsView: View {
         progress.filter { $0.modeProgress(for: mode).isMastered }.count
     }
 
-    // Best score (highest percentage) for a given mode.
     private func bestScore(for mode: QuizMode) -> QuizSession? {
         sessions
             .filter  { $0.mode == mode.rawValue }
             .max     { $0.percentage < $1.percentage }
     }
 
-    // Fastest completion time for a given mode.
     private func fastestTime(for mode: QuizMode) -> QuizSession? {
         sessions
             .filter { $0.mode == mode.rawValue }
@@ -82,7 +54,7 @@ struct StatsView: View {
                 }
                 .padding(16)
             }
-            .navigationTitle("Stats")
+            .navigationTitle(lang.t("stats.title"))
         }
     }
 
@@ -91,13 +63,15 @@ struct StatsView: View {
         HStack(spacing: 12) {
             heroCard(
                 topText  : streak == 0 ? "—" : "\(streak)",
-                label    : streak == 1 ? "Day Streak" : "Days Streak",
+                label    : streak == 1
+                           ? lang.t("stats.streak.singular")
+                           : lang.t("stats.streak.plural"),
                 icon     : "flame.fill",
                 iconColor: streak > 0 ? .orange : .secondary
             )
             heroCard(
                 topText  : "\(masteredCount)",
-                label    : "of \(totalCountries) Mastered",
+                label    : "/ \(lang.countries.count) \(lang.t("stats.mastered.label"))",
                 icon     : "checkmark.seal.fill",
                 iconColor: masteredCount > 0 ? .green : .secondary
             )
@@ -111,11 +85,6 @@ struct StatsView: View {
                 .foregroundStyle(iconColor)
             Text(topText)
                 .font(.system(size: 36, weight: .bold))
-                // .contentTransition(.numericText()) animates number changes
-                // by counting up/down digit-by-digit — feels alive when the
-                // streak increments after a study session.
-                // .animation(…, value: streak) triggers the spring whenever
-                // the @AppStorage streak value changes.
                 .contentTransition(.numericText())
                 .animation(.spring(response: 0.4, dampingFraction: 0.75), value: streak)
             Text(label)
@@ -135,36 +104,34 @@ struct StatsView: View {
         GroupBox {
             VStack(spacing: 12) {
 
-                // Overall gold-badge row
                 HStack(spacing: 10) {
                     Text("⭐")
                         .font(.title3)
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("Gold Badge")
+                            Text(lang.t("stats.mastery.goldBadge"))
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                             Spacer()
-                            Text("\(masteredCount) / \(totalCountries)")
+                            Text("\(masteredCount) / \(lang.countries.count)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        ProgressView(value: Double(masteredCount), total: Double(totalCountries))
+                        ProgressView(value: Double(masteredCount), total: Double(max(lang.countries.count, 1)))
                             .tint(.yellow)
                     }
                 }
 
                 Divider()
 
-                // Per-mode rows
                 ForEach(QuizMode.allCases, id: \.self) { mode in
                     let count = masteredForMode(mode)
                     HStack(spacing: 8) {
-                        Text(mode.rawValue)
+                        Text(mode.localizedName(using: lang))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(width: 140, alignment: .leading)
-                        ProgressView(value: Double(count), total: Double(totalCountries))
+                        ProgressView(value: Double(count), total: Double(max(lang.countries.count, 1)))
                             .tint(AppColors.accent)
                         Text("\(count)")
                             .font(.caption2)
@@ -174,7 +141,7 @@ struct StatsView: View {
                 }
             }
         } label: {
-            Label("Mastery Breakdown", systemImage: "star.fill")
+            Label(lang.t("stats.mastery.title"), systemImage: "star.fill")
                 .foregroundStyle(.yellow)
         }
     }
@@ -195,7 +162,7 @@ struct StatsView: View {
                     }
                 }
             } label: {
-                Label("Personal Bests", systemImage: "trophy.fill")
+                Label(lang.t("stats.bests.title"), systemImage: "trophy.fill")
                     .foregroundStyle(.yellow)
             }
         }
@@ -203,7 +170,7 @@ struct StatsView: View {
 
     private func bestRow(for mode: QuizMode) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(mode.rawValue)
+            Text(mode.localizedName(using: lang))
                 .font(.subheadline)
                 .fontWeight(.semibold)
             HStack(spacing: 16) {
@@ -229,14 +196,13 @@ struct StatsView: View {
     @ViewBuilder
     private var historySection: some View {
         if sessions.isEmpty {
-            // Custom emoji empty state — warmer than the default system view.
             VStack(spacing: 16) {
                 Text("🎯")
                     .font(.system(size: 72))
-                Text("No Sessions Yet")
+                Text(lang.t("stats.history.empty.title"))
                     .font(.title2)
                     .fontWeight(.bold)
-                Text("Complete a quiz to see\nyour history here.")
+                Text(lang.t("stats.history.empty.subtitle"))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -255,7 +221,7 @@ struct StatsView: View {
                     }
                 }
             } label: {
-                Label("Recent Sessions", systemImage: "clock.fill")
+                Label(lang.t("stats.history.title"), systemImage: "clock.fill")
                     .foregroundStyle(.purple)
             }
         }
@@ -264,7 +230,7 @@ struct StatsView: View {
     private func sessionRow(_ session: QuizSession) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.mode)
+                Text(lang.localizedModeName(session.mode))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 Text(session.date.formatted(date: .abbreviated, time: .shortened))
@@ -287,5 +253,6 @@ struct StatsView: View {
 
 #Preview {
     StatsView()
+        .environmentObject(LanguageManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }
