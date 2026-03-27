@@ -89,7 +89,23 @@ struct QuizResultView: View {
             VStack(spacing: 12) {
 
                 Button {
-                    path = [.quiz(mode: mode, questions: questions.shuffled())]
+                    // Build fresh QuizQuestion instances so each question gets
+                    // a brand-new UUID.  The `.id()` modifier on QuizView (in
+                    // QuizSetupView's navigationDestination) compares those UUIDs;
+                    // when they differ SwiftUI fully destroys and recreates the
+                    // view, resetting every @State var (currentIndex, score, etc.)
+                    // to its default.  Without new UUIDs the IDs look the same
+                    // after a shuffle and SwiftUI reuses the existing QuizView
+                    // with its stale state, which is what caused the frozen screen.
+                    let freshQuestions = questions.shuffled().map { q in
+                        QuizQuestion(
+                            prompt       : q.prompt,
+                            correctAnswer: q.correctAnswer,
+                            choices      : q.choices.shuffled(),
+                            countryName  : q.countryName
+                        )
+                    }
+                    path = [.quiz(mode: mode, questions: freshQuestions)]
                 } label: {
                     Label("Play Again", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
