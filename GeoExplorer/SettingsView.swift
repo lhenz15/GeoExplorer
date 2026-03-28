@@ -1,17 +1,19 @@
 // SettingsView.swift
 // GeoExplorer
 //
-// Settings screen with three sections:
+// Settings screen with four sections:
 //   1. Language     — switch between English and Spanish.
-//   2. Daily Reminder — schedule a local notification at a chosen time.
-//   3. Reset Progress — wipe all SwiftData records and streak data.
+//   2. Appearance   — System / Light / Dark colour scheme.
+//   3. Daily Reminder — schedule a local notification at a chosen time.
+//   4. Reset Progress — wipe all SwiftData records and streak data.
 
 import SwiftUI
 import SwiftData
 
 struct SettingsView: View {
 
-    @EnvironmentObject var lang: LanguageManager
+    @EnvironmentObject var lang      : LanguageManager
+    @EnvironmentObject var appearance: AppearanceManager
 
     // ── Notification settings ─────────────────────────────────────────────────
     @AppStorage("geoexplorer.notificationsOn") private var notificationsOn = false
@@ -83,6 +85,19 @@ struct SettingsView: View {
                     Text(lang.t("settings.language.header"))
                 }
 
+                // ── Appearance section ──────────────────────────────────────────
+                // Each button calls appearance.setAppearance(_:), which saves the
+                // choice to UserDefaults and publishes the new value.  GeoExplorerApp
+                // reads appearance.colorScheme in .preferredColorScheme and the whole
+                // app re-renders immediately — no restart needed.
+                Section {
+                    appearanceRow(.system, label: "System",  icon: "circle.lefthalf.filled")
+                    appearanceRow(.light,  label: "Light",   icon: "sun.max.fill")
+                    appearanceRow(.dark,   label: "Dark",    icon: "moon.fill")
+                } header: {
+                    Text("Appearance")
+                }
+
                 // ── Daily reminder ─────────────────────────────────────────────
                 Section {
                     Toggle(lang.t("settings.reminder.toggle"), isOn: $notificationsOn)
@@ -137,6 +152,25 @@ struct SettingsView: View {
         }
     }
 
+    // ── Appearance row ─────────────────────────────────────────────────────────
+    // A single tappable row for the appearance picker.  The checkmark appears
+    // next to whichever option currently matches appearance.current.
+    private func appearanceRow(_ option: AppAppearance, label: String, icon: String) -> some View {
+        Button {
+            appearance.setAppearance(option)
+        } label: {
+            HStack {
+                Label(label, systemImage: icon)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if appearance.current == option {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(AppColors.accent)
+                }
+            }
+        }
+    }
+
     // ── Reset ──────────────────────────────────────────────────────────────────
     private func resetProgress() {
         sessions .forEach { modelContext.delete($0) }
@@ -151,5 +185,6 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(LanguageManager())
+        .environmentObject(AppearanceManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }
