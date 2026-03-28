@@ -24,9 +24,9 @@ enum DataLoader {
         // with — Swift source (compiled), images, sounds, and JSON files.
         // `url(forResource:withExtension:)` searches the bundle for
         // "countries.json" and returns its file path, or nil if not found.
-        guard let url = Bundle.main.url(forResource: "countries", withExtension: "json") else {
+        guard let url = Bundle.main.url(forResource: "countries-en", withExtension: "json") else {
             fatalError("""
-                countries.json not found in the app bundle.
+                countries-en.json not found in the app bundle.
                 Make sure the file is inside the GeoExplorer/ folder in Xcode.
                 """)
         }
@@ -38,7 +38,7 @@ enum DataLoader {
         // `try?` converts a throwing call into an Optional — if reading fails
         // we get nil instead of a crash, and the `guard` handles it.
         guard let data = try? Data(contentsOf: url) else {
-            fatalError("Could not read countries.json from disk.")
+            fatalError("Could not read countries-en.json from disk.")
         }
 
         // ── Step 3: Decode JSON → [Country] ──────────────────────────────
@@ -51,7 +51,7 @@ enum DataLoader {
         // By default, JSONDecoder expects camelCase keys (like "funFact"),
         // which matches our JSON exactly, so no extra configuration needed.
         guard let countries = try? JSONDecoder().decode([Country].self, from: data) else {
-            fatalError("Failed to decode countries.json — check that the JSON is valid and matches the Country struct.")
+            fatalError("Failed to decode countries-en.json — check that the JSON is valid and matches the Country struct.")
         }
 
         // Sort alphabetically by name so the list is always consistent.

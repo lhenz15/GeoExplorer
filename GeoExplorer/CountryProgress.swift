@@ -17,9 +17,9 @@
 // transformer, or any extra code — just declare the property normally.
 //
 // ── Gold badge threshold ──────────────────────────────────────────────────────
-// A country earns ⭐ once mastered in at least 2 of the 4 modes.
-// Why 2-of-4?  It rewards real breadth (you know the flag AND the capital)
-// without demanding perfect coverage of every possible mode.
+// A country earns ⭐ once mastered in at least 3 of the 4 modes.
+// This requires solid coverage: flag recognition, capital knowledge, and
+// at least one direction of the country ↔ capital association.
 
 import SwiftData
 
@@ -42,7 +42,7 @@ class CountryProgress {
     var hasGoldBadge: Bool {
         [flagToCountry, countryToFlag, countryToCapital, capitalToCountry]
             .filter { $0.isMastered }
-            .count >= 2
+            .count >= 3
     }
 
     init(countryName: String) {

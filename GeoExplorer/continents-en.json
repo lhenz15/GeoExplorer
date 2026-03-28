@@ -1,0 +1,8 @@
+[
+  {"id": "all",      "name": "All"},
+  {"id": "Africa",   "name": "Africa"},
+  {"id": "Americas", "name": "Americas"},
+  {"id": "Asia",     "name": "Asia"},
+  {"id": "Europe",   "name": "Europe"},
+  {"id": "Oceania",  "name": "Oceania"}
+]

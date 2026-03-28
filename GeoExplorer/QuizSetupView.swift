@@ -8,31 +8,24 @@ import SwiftUI
 
 struct QuizSetupView: View {
 
-    // ── Dismiss ───────────────────────────────────────────────────────────────
-    // Closes the fullScreenCover when the user taps the × button.
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var lang: LanguageManager
 
-    // ── Navigation state ──────────────────────────────────────────────────────
     @State private var path: [QuizRoute] = []
 
-    // ── Setup selections ──────────────────────────────────────────────────────
     @State private var mode              : QuizMode = .flagToCountry
-    @State private var selectedContinent : String   = "All"
+    @State private var selectedContinent : String   = "all"
     @State private var questionCount     : Int      = 10
 
-    // ── Data ──────────────────────────────────────────────────────────────────
-    private let countries  = DataLoader.loadCountries()
-    private let continents = ["All", "Africa", "Americas", "Asia", "Europe", "Oceania"]
-    private let counts     = [5, 10, 20]
+    private let counts = [5, 10, 20]
 
     // ── Derived values ────────────────────────────────────────────────────────
     private var availableCountries: [Country] {
-        selectedContinent == "All"
-            ? countries
-            : countries.filter { $0.continent == selectedContinent }
+        selectedContinent == "all"
+            ? lang.countries
+            : lang.countries.filter { $0.continent == selectedContinent }
     }
 
-    // Clamp to pool size so we never ask for more questions than countries exist.
     private var actualCount: Int {
         min(questionCount, availableCountries.count)
     }
@@ -43,27 +36,25 @@ struct QuizSetupView: View {
             Form {
 
                 // ── Mode section ───────────────────────────────────────────
-                // 4 options → default Form Picker style (taps to a sub-list)
-                // is cleaner than .segmented for more than 2-3 choices.
-                Section("Quiz Mode") {
+                Section(lang.t("quiz.setup.mode")) {
                     Picker("Mode", selection: $mode) {
                         ForEach(QuizMode.allCases, id: \.self) { m in
-                            Text(m.rawValue).tag(m)
+                            Text(m.localizedName(using: lang)).tag(m)
                         }
                     }
                 }
 
                 // ── Continent section ──────────────────────────────────────
-                Section("Continent") {
+                Section(lang.t("quiz.setup.continent")) {
                     Picker("Continent", selection: $selectedContinent) {
-                        ForEach(continents, id: \.self) { c in
-                            Text(c).tag(c)
+                        ForEach(lang.continents) { c in
+                            Text(c.name).tag(c.id)
                         }
                     }
                 }
 
                 // ── Question count section ─────────────────────────────────
-                Section("Number of Questions") {
+                Section(lang.t("quiz.setup.questions")) {
                     Picker("Questions", selection: $questionCount) {
                         ForEach(counts, id: \.self) { n in
                             Text("\(n)").tag(n)
@@ -76,37 +67,35 @@ struct QuizSetupView: View {
                 Section {
                     VStack(spacing: 14) {
                         HStack {
-                            Label("Questions", systemImage: "questionmark.circle")
+                            Label(lang.t("quiz.setup.questionsLabel"), systemImage: "questionmark.circle")
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text("\(actualCount)")
                                 .fontWeight(.semibold)
                         }
                         HStack {
-                            Label("Region", systemImage: "globe")
+                            Label(lang.t("quiz.setup.region"), systemImage: "globe")
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Text(selectedContinent)
+                            Text(lang.continentName(for: selectedContinent))
                                 .fontWeight(.semibold)
                         }
 
                         Button {
                             path.append(.quiz(mode: mode, questions: generateQuestions()))
                         } label: {
-                            Text("Start Quiz")
+                            Text(lang.t("quiz.setup.start"))
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .disabled(availableCountries.isEmpty)
-                        // scaleOnPress() adds a spring scale-down on press
-                        // so the button gives instant tactile feedback.
                         .scaleOnPress()
                     }
                     .padding(.vertical, 4)
                 }
             }
-            .navigationTitle("Quiz")
+            .navigationTitle(lang.t("quiz.title"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -161,13 +150,17 @@ struct QuizSetupView: View {
     }
 
     // ── Question generation ────────────────────────────────────────────────────
-    // Delegates to the static generator in Quiz.swift so QuizResultView
-    // (Play Again) can produce a fresh batch with the exact same logic.
     private func generateQuestions() -> [QuizQuestion] {
-        QuizQuestion.generate(mode: mode, continent: selectedContinent, count: questionCount)
+        QuizQuestion.generate(
+            mode     : mode,
+            continent: selectedContinent,
+            count    : questionCount,
+            from     : lang.countries
+        )
     }
 }
 
 #Preview {
     QuizSetupView()
+        .environmentObject(LanguageManager())
 }

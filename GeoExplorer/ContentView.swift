@@ -14,31 +14,34 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+
+    @EnvironmentObject var lang: LanguageManager
+
     var body: some View {
         TabView {
 
             // ── Tab 1: Home dashboard ──────────────────────────────────────────
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label(lang.t("tab.home"), systemImage: "house.fill")
                 }
 
             // ── Tab 2: Country browser ─────────────────────────────────────────
             CountryListView()
                 .tabItem {
-                    Label("Explore", systemImage: "globe")
+                    Label(lang.t("tab.explore"), systemImage: "globe")
                 }
 
             // ── Tab 3: Stats dashboard ─────────────────────────────────────────
             StatsView()
                 .tabItem {
-                    Label("Stats", systemImage: "chart.bar.fill")
+                    Label(lang.t("tab.stats"), systemImage: "chart.bar.fill")
                 }
 
             // ── Tab 4: Settings ────────────────────────────────────────────────
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label(lang.t("tab.settings"), systemImage: "gearshape.fill")
                 }
         }
     }
@@ -46,5 +49,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(LanguageManager())
         .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

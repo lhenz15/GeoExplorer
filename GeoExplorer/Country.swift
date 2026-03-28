@@ -1,46 +1,40 @@
 // Country.swift
 // GeoExplorer
 //
-// The core data model.
+// The core data model — now with an `id` field for stable cross-language identity.
 //
-// NEW: `Codable` conformance lets Swift automatically convert JSON ↔ Swift.
-// `Codable` is actually a shorthand for two protocols combined:
-//   • `Encodable` — Swift struct  →  JSON  (e.g. saving to disk)
-//   • `Decodable` — JSON  →  Swift struct  (e.g. reading a file)
-// We only need `Decodable` here, but `Codable` costs nothing extra and is
-// more conventional when you might need both directions later.
+// ── Why did `id` change from UUID to String? ──────────────────────────────────
+// Previously `id` was a UUID generated fresh at decode time (not in the JSON).
+// This worked fine when there was only one language, but with localisation we
+// need a stable key that is the same regardless of which language file is loaded.
+//
+// The new `id` is the English country name (e.g. "France") decoded directly
+// from the JSON.  Every other system that stores a country reference — the
+// SwiftData CountryProgress.countryName and FavoriteCountry.name — already
+// uses the English name as its key.  Making Country.id match that convention
+// means zero migration and O(1) lookups.
+//
+// ── How does Codable work now? ────────────────────────────────────────────────
+// All properties are declared with `let` and have the same name as the JSON keys,
+// so Swift's automatic Codable synthesis handles everything.  No CodingKeys enum,
+// no custom init(from:) needed — just declare the struct and Swift does the rest.
 
 import Foundation
 
-struct Country: Identifiable, Codable {
+struct Country: Identifiable, Codable, Hashable {
 
-    // `var` instead of `let` so Swift's synthesized Codable init can
-    // assign the default value. Since `id` is NOT in CodingKeys below,
-    // Swift simply calls UUID() for each country when decoding — it is
-    // never read from the JSON file.
-    var id = UUID()
+    // Stable English name — same in every language file.
+    // Used as the primary key for CountryProgress and FavoriteCountry.
+    let id        : String
 
-    let name: String
-    let capital: String
-    let continent: String
-    let flag: String
+    // Localised fields — change when the active language changes.
+    let name      : String
+    let capital   : String
+    let continent : String   // continent id: "Africa" | "Americas" | "Asia" | "Europe" | "Oceania"
+    let flag      : String
     let population: Int
-    let area: Double
-    let funFact: String
-    let latitude: Double
-    let longitude: Double
-
-    // ── CodingKeys ────────────────────────────────────────────────────────
-    // `CodingKeys` is an enum that tells Swift which JSON keys map to which
-    // Swift properties. Two important things it does here:
-    //
-    // 1. Maps names: every case name must match a property name exactly
-    //    (they already do, so no aliases are needed — but you could write
-    //    `case funFact = "fun_fact"` to handle a snake_case JSON key).
-    //
-    // 2. Excludes `id`: because `id` is NOT listed, Swift leaves it alone
-    //    during decoding and uses the default value `UUID()` instead.
-    enum CodingKeys: String, CodingKey {
-        case name, capital, continent, flag, population, area, funFact, latitude, longitude
-    }
+    let area      : Double
+    let funFact   : String
+    let latitude  : Double
+    let longitude : Double
 }

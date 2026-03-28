@@ -2,14 +2,6 @@
 // GeoExplorer
 //
 // Screen 2: shows one card at a time. Tap to flip, use Previous/Next to navigate.
-//
-// New concepts:
-//   • withAnimation        — runs a state change through SwiftUI's animation engine
-//   • .rotation3DEffect    — rotates a view in 3D space (the flip effect)
-//   • ZStack               — layers views on top of each other (needed for front/back)
-//   • ProgressView         — a built-in progress bar
-//   • .toolbar             — adds buttons to the navigation bar
-//   • .navigationBarBackButtonHidden — hides the default "<Back" button
 
 import SwiftUI
 import SwiftData
@@ -18,6 +10,8 @@ struct FlashcardView: View {
 
     let cards: [Flashcard]
     @Binding var path: [FlashcardRoute]
+
+    @EnvironmentObject var lang: LanguageManager
 
     // ── Local state ───────────────────────────────────────────────────────────
     @State private var currentIndex = 0
@@ -31,19 +25,17 @@ struct FlashcardView: View {
     // ── Body ──────────────────────────────────────────────────────────────────
     var body: some View {
         VStack(spacing: 20) {
-            // .screenAppear() fades + lightly scales the content in when
-            // this screen is pushed onto the NavigationStack.
 
             progressHeader
 
             Spacer()
 
-            // The card itself — tapping it flips it.
             cardStack
                 .onTapGesture { flipCard() }
 
-            // Small hint so the user knows it's interactive.
-            Text(isFlipped ? "Tap to see question" : "Tap to reveal answer")
+            Text(isFlipped
+                 ? lang.t("flashcard.card.tapQuestion")
+                 : lang.t("flashcard.card.tapAnswer"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -54,14 +46,12 @@ struct FlashcardView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
         .screenAppear()
-        .navigationTitle("Card \(currentIndex + 1) of \(cards.count)")
+        .navigationTitle("\(lang.t("flashcard.card.title")) \(currentIndex + 1) \(lang.t("flashcard.card.of")) \(cards.count)")
         .navigationBarTitleDisplayMode(.inline)
-        // Hide the default back button — we provide our own "Quit".
         .navigationBarBackButtonHidden()
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Quit") {
-                    // Wipe the entire path — jumps straight back to Setup.
+                Button(lang.t("flashcard.card.quit")) {
                     path = []
                 }
                 .foregroundStyle(.red)
@@ -72,8 +62,6 @@ struct FlashcardView: View {
     // ── Progress header ───────────────────────────────────────────────────────
     private var progressHeader: some View {
         VStack(spacing: 6) {
-            // `ProgressView(value:total:)` draws a filled horizontal bar.
-            // value / total = fraction complete. SwiftUI handles the math.
             ProgressView(value: Double(currentIndex + 1), total: Double(cards.count))
                 .tint(AppColors.accent)
 
@@ -84,48 +72,22 @@ struct FlashcardView: View {
     }
 
     // ── The flip card ─────────────────────────────────────────────────────────
-    // This is the heart of the screen. Two card faces sit in a ZStack.
-    // When `isFlipped` changes, `.rotation3DEffect` rotates each face in 3D.
-    //
-    // HOW THE 3D FLIP WORKS:
-    // ┌─────────────────────────────────────────────────────────────────┐
-    // │ Imagine a physical card lying flat on a table, held at its      │
-    // │ left and right edges. "Flipping" means rotating it 180° around  │
-    // │ a vertical axis (the Y axis).                                   │
-    // │                                                                 │
-    // │  Front face:                                                    │
-    // │    - Starts at 0°   (facing you).                              │
-    // │    - Rotates to 180° when flipped (now facing away from you).  │
-    // │                                                                 │
-    // │  Back face:                                                     │
-    // │    - Starts at -180° (pre-rotated to face away from you).      │
-    // │    - Rotates to 0°   when flipped (now facing toward you).     │
-    // │                                                                 │
-    // │  opacity: each face hides itself after it passes 90° so you    │
-    // │  never see mirrored text. The transition is instant at 90°     │
-    // │  — the spring animation smoothly covers the jump.              │
-    // └─────────────────────────────────────────────────────────────────┘
     private var cardStack: some View {
         ZStack {
-            // ── Front face ─────────────────────────────────────────────
-            CardFace(text: currentCard.question, role: .question)
+            CardFace(text: currentCard.question, role: .question, lang: lang)
                 .rotation3DEffect(
                     .degrees(isFlipped ? 180 : 0),
-                    axis: (x: 0, y: 1, z: 0),    // Y axis = vertical spin
-                    perspective: 0.4              // depth — 0 = flat, 1 = very deep
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.4
                 )
-                // Hide once this face has rotated past 90° (pointing away).
                 .opacity(isFlipped ? 0 : 1)
 
-            // ── Back face ──────────────────────────────────────────────
-            CardFace(text: currentCard.answer, role: .answer)
-                // Pre-rotated -180°: starts facing away, arrives at 0° (facing you).
+            CardFace(text: currentCard.answer, role: .answer, lang: lang)
                 .rotation3DEffect(
                     .degrees(isFlipped ? 0 : -180),
                     axis: (x: 0, y: 1, z: 0),
                     perspective: 0.4
                 )
-                // Hidden until this face has rotated into view past 90°.
                 .opacity(isFlipped ? 1 : 0)
         }
         .frame(height: 280)
@@ -135,20 +97,18 @@ struct FlashcardView: View {
     private var navigationButtons: some View {
         HStack(spacing: 16) {
 
-            // Previous button
             Button {
                 moveCard(by: -1)
             } label: {
-                Label("Previous", systemImage: "chevron.left")
+                Label(lang.t("flashcard.card.previous"), systemImage: "chevron.left")
             }
             .buttonStyle(.bordered)
             .disabled(isFirstCard)
 
             Spacer()
 
-            // Next or Finish button
             if isLastCard {
-                Button("Finish  ✓") {
+                Button(lang.t("flashcard.card.finish")) {
                     saveProgress()
                     path.append(.results(cardCount: cards.count, cards: cards))
                 }
@@ -157,8 +117,8 @@ struct FlashcardView: View {
                 Button {
                     moveCard(by: 1)
                 } label: {
-                    Label("Next", systemImage: "chevron.right")
-                        .labelStyle(.titleAndIcon) // shows both text AND icon
+                    Label(lang.t("flashcard.card.next"), systemImage: "chevron.right")
+                        .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.bordered)
             }
@@ -166,17 +126,7 @@ struct FlashcardView: View {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
     private func flipCard() {
-        // `withAnimation` wraps the state change so SwiftUI smoothly
-        // interpolates the 3D rotation between 0° and 180°.
-        //
-        // Physics tuning:
-        //   response: 0.55   → slightly slower than default; gives the card
-        //                       time to feel like it has physical weight.
-        //   dampingFraction: 0.6 → underdamped spring; the card overshoots
-        //                       180° slightly and wobbles back, like a real
-        //                       physical card flicked off a table.
         withAnimation(.spring(response: 0.55, dampingFraction: 0.6)) {
             isFlipped.toggle()
         }
@@ -187,27 +137,19 @@ struct FlashcardView: View {
         currentIndex += offset
     }
 
-    // ── Progress saving ───────────────────────────────────────────────────────
-    // Called when the user taps Finish.
-    // Flashcard sessions count toward the daily streak but not toward
-    // per-mode mastery credits (those are quiz-only).
     private func saveProgress() {
         StreakManager.recordStudySession()
     }
 }
 
 // ── CardFace ─────────────────────────────────────────────────────────────────
-// A `private` struct — only usable inside this file.
-// It draws one side of the flashcard (question or answer).
-
 private enum CardRole { case question, answer }
 
 private struct CardFace: View {
     let text: String
     let role: CardRole
+    let lang: LanguageManager
 
-    // Flag emojis are a single Swift grapheme cluster (e.g. 🇫🇷 = 1 character).
-    // We show them at 80pt; other text uses a smaller title size.
     private var isSingleEmoji: Bool { text.count == 1 }
 
     var body: some View {
@@ -216,8 +158,9 @@ private struct CardFace: View {
             .overlay {
                 VStack(spacing: 16) {
 
-                    // Role label at the top corner
-                    Text(role == .question ? "QUESTION" : "ANSWER")
+                    Text(role == .question
+                         ? lang.t("flashcard.card.question")
+                         : lang.t("flashcard.card.answer"))
                         .font(.caption2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white.opacity(0.65))
@@ -226,14 +169,13 @@ private struct CardFace: View {
 
                     Spacer()
 
-                    // Main text — large emoji for flag quiz, regular for others
                     Text(text)
                         .font(isSingleEmoji
                               ? .system(size: 80)
                               : .system(size: 26, weight: .bold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.5)  // shrinks if text is very long
+                        .minimumScaleFactor(0.5)
                         .padding(.horizontal, 12)
 
                     Spacer()
@@ -263,8 +205,6 @@ private struct CardFace: View {
 
 // ── Preview ───────────────────────────────────────────────────────────────────
 #Preview {
-    // NavigationStack is needed in the preview because FlashcardView uses
-    // navigation bar features (.navigationTitle, .toolbar, etc.)
     NavigationStack {
         FlashcardView(
             cards: [
@@ -275,5 +215,6 @@ private struct CardFace: View {
             path: .constant([.session([])])
         )
     }
+    .environmentObject(LanguageManager())
     .modelContainer(for: [FavoriteCountry.self, QuizSession.self, CountryProgress.self], inMemory: true)
 }

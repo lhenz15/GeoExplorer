@@ -16,11 +16,12 @@ struct QuizResultView: View {
     let questionCount: Int
     @Binding var path: [QuizRoute]
 
+    @EnvironmentObject var lang: LanguageManager
+
     // ── Derived values ────────────────────────────────────────────────────────
     private var percentage: Double  { total > 0 ? Double(score) / Double(total) : 0 }
     private var percentText: String { "\(Int(percentage * 100))%" }
 
-    // Pick an emoji that reflects how well the user did.
     private var resultEmoji: String {
         switch percentage {
         case 0.9...: return "🏆"
@@ -32,18 +33,15 @@ struct QuizResultView: View {
 
     private var resultMessage: String {
         switch percentage {
-        case 0.9...: return "Outstanding!"
-        case 0.7...: return "Great job!"
-        case 0.5...: return "Good effort!"
-        default:     return "Keep practising!"
+        case 0.9...: return lang.t("quiz.result.outstanding")
+        case 0.7...: return lang.t("quiz.result.great")
+        case 0.5...: return lang.t("quiz.result.good")
+        default:     return lang.t("quiz.result.keep")
         }
     }
 
     // ── Body ──────────────────────────────────────────────────────────────────
     var body: some View {
-        // ZStack layers the confetti on top of the result content.
-        // We only show confetti when the user scored 70 % or above —
-        // it's a reward for a good performance, not a consolation prize.
         ZStack {
         VStack(spacing: 0) {
 
@@ -61,11 +59,10 @@ struct QuizResultView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
 
-                    // Big fraction — the most important number.
                     Text("\(score) / \(total)")
                         .font(.system(size: 60, weight: .bold))
 
-                    Text("\(percentText) correct")
+                    Text("\(percentText) \(lang.t("quiz.result.percentCorrect"))")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                 }
@@ -75,9 +72,9 @@ struct QuizResultView: View {
 
             // ── Stat pills ─────────────────────────────────────────────────
             HStack(spacing: 32) {
-                statPill(value: "\(score)",         label: "Correct",   icon: "checkmark.circle.fill",  color: .green)
-                statPill(value: "\(total - score)", label: "Wrong",     icon: "xmark.circle.fill",      color: .red)
-                statPill(value: percentText,        label: "Score",     icon: "percent",                color: .blue)
+                statPill(value: "\(score)",         label: lang.t("quiz.result.correct"),  icon: "checkmark.circle.fill", color: .green)
+                statPill(value: "\(total - score)", label: lang.t("quiz.result.wrong"),    icon: "xmark.circle.fill",     color: .red)
+                statPill(value: percentText,        label: lang.t("quiz.result.score"),    icon: "percent",               color: .blue)
             }
             .padding(.vertical, 20)
             .padding(.horizontal, 24)
@@ -91,19 +88,15 @@ struct QuizResultView: View {
             VStack(spacing: 12) {
 
                 Button {
-                    // Generate a completely fresh batch of randomly selected
-                    // countries using the same mode / continent / count config.
-                    // QuizQuestion.generate() produces new UUIDs, so the .id()
-                    // modifier on QuizView forces a full teardown + recreation,
-                    // resetting every @State var (currentIndex, score, timer).
                     let freshQuestions = QuizQuestion.generate(
                         mode     : mode,
                         continent: continent,
-                        count    : questionCount
+                        count    : questionCount,
+                        from     : lang.countries
                     )
                     path = [.quiz(mode: mode, questions: freshQuestions)]
                 } label: {
-                    Label("Play Again", systemImage: "arrow.clockwise")
+                    Label(lang.t("quiz.result.playAgain"), systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -113,7 +106,7 @@ struct QuizResultView: View {
                 Button {
                     path = []
                 } label: {
-                    Label("Back to Setup", systemImage: "house")
+                    Label(lang.t("quiz.result.backSetup"), systemImage: "house")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -125,19 +118,16 @@ struct QuizResultView: View {
         }
         .screenAppear()
 
-        // Confetti fires once when the view appears and fades out on its own.
-        // .allowsHitTesting(false) inside ConfettiView lets button taps through.
         if percentage >= 0.7 {
             ConfettiView()
         }
 
         } // end ZStack
-        .navigationTitle("Results")
+        .navigationTitle(lang.t("quiz.result.title"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
     }
 
-    // ── Helper: coloured stat pill ─────────────────────────────────────────────
     private func statPill(value: String, label: String, icon: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
@@ -161,13 +151,14 @@ struct QuizResultView: View {
             total        : 10,
             mode         : .flagToCountry,
             questions    : [],
-            continent    : "All",
+            continent    : "all",
             questionCount: 10,
             path         : .constant([
                 .quiz(mode: .flagToCountry, questions: []),
                 .results(score: 7, total: 10, mode: .flagToCountry, questions: [],
-                         continent: "All", questionCount: 10)
+                         continent: "all", questionCount: 10)
             ])
         )
     }
+    .environmentObject(LanguageManager())
 }
