@@ -21,13 +21,11 @@
 // draws the outline.  To fill it with colour you also need an
 // MKPolygonRenderer (returned from the delegate's rendererForOverlay method).
 //
-// ── What is MKStandardMapConfiguration? ─────────────────────────────────────
-// Introduced in iOS 16, MKStandardMapConfiguration replaces the old
-// `mapType` property as the way to describe what a map looks like.
-// Setting it on `map.preferredConfiguration` is the modern approach.
-// We use `emphasisStyle: .muted` which renders a minimal, low-contrast
-// style that suppresses all country names, city names, and road labels —
-// exactly what we need so the answer isn't printed on screen.
+// ── What is MKImageryMapConfiguration? ───────────────────────────────────────
+// Introduced in iOS 16, MKImageryMapConfiguration renders pure satellite
+// imagery with zero labels — no country names, city names, road names, or
+// POI markers.  This guarantees the answer can never appear on screen,
+// unlike the standard map which can still show text through feature labels.
 //
 // ── What is a Coordinator? ────────────────────────────────────────────────────
 // MKMapView uses the old delegate pattern from Objective-C days: you set a
@@ -49,30 +47,13 @@ struct CountryMapView: UIViewRepresentable {
         let map = MKMapView()
 
         // ── Map configuration (iOS 16+) ───────────────────────────────────────
-        // MKStandardMapConfiguration is the modern API for describing the
-        // map's visual style, replacing the legacy `mapType` property.
-        //
-        // elevationStyle: .flat  — renders the map as a flat 2D plane with
-        //   no terrain relief shading.  Keeps the basemap neutral so the
-        //   indigo polygon stands out clearly.
-        //
-        // pointOfInterestFilter: .excludingAll  — removes every POI icon
-        //   and its associated label (cafés, monuments, hospitals, etc.).
-        //
-        // showsTraffic: false  — hides the traffic overlay.
-        //
-        // preferredConfiguration  — the iOS 16+ replacement for mapType;
-        //   assigning here activates the configuration immediately.
-        //
-        // selectableMapFeatures = []  — prevents any map feature from
-        //   becoming tappable or showing a callout/highlight when touched.
-        //   Without this, tapping the map could reveal a country name in
-        //   a callout bubble.
-        let config                   = MKStandardMapConfiguration(elevationStyle: .flat)
-        config.pointOfInterestFilter = .excludingAll
-        config.showsTraffic          = false
-        map.preferredConfiguration   = config
-        map.selectableMapFeatures    = []
+        // MKImageryMapConfiguration shows pure satellite imagery — no labels,
+        // no POIs, no road names.  elevationStyle: .flat keeps it 2D.
+        // selectableMapFeatures = [] prevents tapping from showing a callout
+        // that could reveal a country name.
+        let config                 = MKImageryMapConfiguration(elevationStyle: .flat)
+        map.preferredConfiguration = config
+        map.selectableMapFeatures  = []
 
         map.showsCompass  = false
         map.showsScale    = false
@@ -166,9 +147,9 @@ struct CountryMapView: UIViewRepresentable {
 
             let renderer = MKPolygonRenderer(polygon: polygon)
 
-            // Fill: #4F46E5 at 60 % opacity — enough to see the country shape
-            // without completely hiding the map underneath.
-            renderer.fillColor = UIColor(red: 79/255, green: 70/255, blue: 229/255, alpha: 0.6)
+            // Fill: #4F46E5 at 75 % opacity — boosted from 60 % to stand out
+            // clearly against the darker satellite imagery background.
+            renderer.fillColor = UIColor(red: 79/255, green: 70/255, blue: 229/255, alpha: 0.75)
 
             // Border: solid #4F46E5 so the edge is crisp.
             renderer.strokeColor = UIColor(red: 79/255, green: 70/255, blue: 229/255, alpha: 1.0)
