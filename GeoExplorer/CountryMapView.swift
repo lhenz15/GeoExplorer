@@ -119,14 +119,22 @@ struct CountryMapView: UIViewRepresentable {
         let latPad = (maxLat - minLat) * 0.4
         let lonPad = (maxLon - minLon) * 0.4
 
+        // MKCoordinateSpan requires latitudeDelta ≤ 180 and longitudeDelta ≤ 360.
+        // A country whose shape data spans near the antimeridian can produce a raw
+        // lon range close to 360°; adding 40 % padding then exceeds the limit and
+        // MapKit throws an NSInvalidArgumentException crash.  Clamp both deltas to
+        // their legal maximums so the region is always valid.
+        let latDelta = min(max(maxLat - minLat + latPad * 2, 1.0), 180.0)
+        let lonDelta = min(max(maxLon - minLon + lonPad * 2, 1.0), 360.0)
+
         let region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(
                 latitude : (minLat + maxLat) / 2,
                 longitude: (minLon + maxLon) / 2
             ),
             span: MKCoordinateSpan(
-                latitudeDelta : max(maxLat - minLat + latPad * 2, 1.0),
-                longitudeDelta: max(maxLon - minLon + lonPad * 2, 1.0)
+                latitudeDelta : latDelta,
+                longitudeDelta: lonDelta
             )
         )
         map.setRegion(region, animated: false)
