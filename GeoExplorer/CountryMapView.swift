@@ -104,28 +104,53 @@ struct CountryMapView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     // ── Camera fit ────────────────────────────────────────────────────────────
-    // Calculates the bounding box of all polygon points and sets a region
-    // that shows the whole country with 40 % padding so neighbouring countries
-    // are visible for geographic context.
+    // Calculates the bounding box of all polygon points, then picks a zoom
+    // strategy based on the great-circle diagonal of that box:
+    //
+    //   < 500 km  — tiny single islands (Nauru, San Marino…).
+    //               10 % padding, 0.3° minimum span (~33 km per side).
+    //               Without this, the 1.0° floor would make a 5 km island
+    //               occupy less than 5 % of the screen.
+    //
+    //   500–1200 km — small/medium archipelagos (Maldives, Tuvalu, Seychelles…).
+    //               Their atolls are individually tiny but the spread is real.
+    //               10 % padding keeps the view tight; 1.0° floor ensures at
+    //               least one atoll fills a reasonable fraction of the screen.
+    //
+    //   > 1200 km — large countries and continent-spanning archipelagos
+    //               (Marshall Islands, Kiribati, Indonesia, Russia…).
+    //               40 % padding provides geographic context.  Clamped to
+    //               legal MapKit limits (lat ≤ 180, lon ≤ 360) to prevent
+    //               the NSInvalidArgumentException crash seen with near-
+    //               antimeridian shapes.
     private func fitCamera(_ map: MKMapView, to coords: [CLLocationCoordinate2D]) {
         guard !coords.isEmpty else { return }
 
         let lats = coords.map(\.latitude)
-        let lons = coords.map(\.longitude)
+        let lons  = coords.map(\.longitude)
 
         let minLat = lats.min()!, maxLat = lats.max()!
         let minLon = lons.min()!, maxLon = lons.max()!
 
-        let latPad = (maxLat - minLat) * 0.4
-        let lonPad = (maxLon - minLon) * 0.4
+        let diagonal = haversineKm(minLat: minLat, maxLat: maxLat,
+                                   minLon: minLon, maxLon: maxLon)
 
-        // MKCoordinateSpan requires latitudeDelta ≤ 180 and longitudeDelta ≤ 360.
-        // A country whose shape data spans near the antimeridian can produce a raw
-        // lon range close to 360°; adding 40 % padding then exceeds the limit and
-        // MapKit throws an NSInvalidArgumentException crash.  Clamp both deltas to
-        // their legal maximums so the region is always valid.
-        let latDelta = min(max(maxLat - minLat + latPad * 2, 1.0), 180.0)
-        let lonDelta = min(max(maxLon - minLon + lonPad * 2, 1.0), 360.0)
+        let padding : Double
+        let minSpan : Double
+        switch diagonal {
+        case ..<500:
+            padding = 0.10; minSpan = 0.3   // tiny islands — zoom in close
+        case 500..<1200:
+            padding = 0.10; minSpan = 1.0   // medium archipelagos — tight but legible
+        default:
+            padding = 0.40; minSpan = 1.0   // large countries — show context
+        }
+
+        let latPad = (maxLat - minLat) * padding
+        let lonPad = (maxLon - minLon) * padding
+
+        let latDelta = min(max(maxLat - minLat + latPad * 2, minSpan), 180.0)
+        let lonDelta = min(max(maxLon - minLon + lonPad * 2, minSpan), 360.0)
 
         let region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(
@@ -138,6 +163,23 @@ struct CountryMapView: UIViewRepresentable {
             )
         )
         map.setRegion(region, animated: false)
+    }
+
+    // ── Haversine diagonal ────────────────────────────────────────────────────
+    // Returns the great-circle distance in km between the SW and NE corners of
+    // a bounding box.  Used to choose the appropriate zoom strategy above.
+    // The formula accounts for the Earth's curvature so it stays accurate even
+    // near the poles where one degree of longitude represents very few km.
+    private func haversineKm(minLat: Double, maxLat: Double,
+                              minLon: Double, maxLon: Double) -> Double {
+        let r    = 6371.0
+        let lat1 = minLat * .pi / 180
+        let lat2 = maxLat * .pi / 180
+        let dLat = (maxLat - minLat) * .pi / 180
+        let dLon = (maxLon - minLon) * .pi / 180
+        let a    = sin(dLat / 2) * sin(dLat / 2)
+                 + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
+        return r * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 
     // ── Coordinator: MKMapViewDelegate ────────────────────────────────────────
