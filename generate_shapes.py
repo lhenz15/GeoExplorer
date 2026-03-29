@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 generate_shapes.py
-Downloads Natural Earth 110m country borders GeoJSON and converts it to
+Downloads Natural Earth 10m country borders GeoJSON and converts it to
 GeoExplorer/countryShapes.json — a compact array of {name, polygons}
 objects used by the Map Quiz mode.
 
@@ -18,7 +18,7 @@ import urllib.request
 
 GEOJSON_URL = (
     "https://raw.githubusercontent.com/nvkelso/natural-earth-vector"
-    "/master/geojson/ne_110m_admin_0_countries.geojson"
+    "/master/geojson/ne_10m_admin_0_countries.geojson"
 )
 
 # ── Name mapping ──────────────────────────────────────────────────────────────
@@ -116,18 +116,18 @@ NE_TO_APP = {
 
 def download_geojson(url: str) -> dict:
     print(f"Downloading {url} …", flush=True)
-    with urllib.request.urlopen(url, timeout=30) as r:
+    with urllib.request.urlopen(url, timeout=120) as r:
         return json.loads(r.read().decode())
 
 
-def largest_polygons(geometry: dict, keep: int = 50) -> list[list]:
+def largest_polygons(geometry: dict, keep: int = 200) -> list[list]:
     """
     Returns up to `keep` outer rings from a Polygon or MultiPolygon geometry.
     Rings are sorted largest-first (by vertex count) so tiny specks are
     dropped last if the cap is ever hit.
 
-    50 is safely above the maximum polygon count in the 110m dataset (13 for
-    Indonesia), so in practice every island of every archipelago is included.
+    200 keeps all meaningful islands in the 10m dataset (Indonesia has ~100+)
+    while still discarding microscopic specks that add bulk without value.
 
     Each returned ring is a list of [lon, lat] pairs.
     """
