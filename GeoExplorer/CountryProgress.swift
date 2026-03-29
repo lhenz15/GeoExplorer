@@ -1,7 +1,7 @@
 // CountryProgress.swift
 // GeoExplorer
 //
-// SwiftData model tracking mastery for a single country across all four
+// SwiftData model tracking mastery for a single country across all five
 // quiz modes.  Each mode is stored as a ModeProgress Codable struct so the
 // database row stays compact while the logic in ModeProgress stays grouped.
 //
@@ -17,7 +17,7 @@
 // transformer, or any extra code — just declare the property normally.
 //
 // ── Gold badge threshold ──────────────────────────────────────────────────────
-// A country earns ⭐ once mastered in at least 3 of the 4 modes.
+// A country earns ⭐ once mastered in at least 3 of the 5 modes.
 // This requires solid coverage: flag recognition, capital knowledge, and
 // at least one direction of the country ↔ capital association.
 
