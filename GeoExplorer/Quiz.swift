@@ -11,6 +11,7 @@ enum QuizMode: String, CaseIterable {
     case countryToFlag    = "Country → Flag"
     case countryToCapital = "Country → Capital"
     case capitalToCountry = "Capital → Country"
+    case mapToCountry     = "Map → Country"
 }
 
 // ── A single quiz question ─────────────────────────────────────────────────────
@@ -44,10 +45,15 @@ struct QuizQuestion: Identifiable, Hashable {
     // `countries` is passed in from LanguageManager so questions use the
     // active language's localised names.
     static func generate(mode: QuizMode, continent: String, count: Int, from countries: [Country]) -> [QuizQuestion] {
-        let pool = continent == "all"
+        var pool = continent == "all"
             ? countries
             : countries.filter { $0.continent == continent }
 
+        // Map quiz can only use countries that have polygon shape data.
+        // ShapeLoader.shapeNames keys are English country names = country.id.
+        if mode == .mapToCountry {
+            pool = pool.filter { ShapeLoader.shapeNames.contains($0.id) }
+        }
 
         let actualCount = min(count, pool.count)
         let slice = Array(pool.shuffled().prefix(actualCount))
@@ -75,6 +81,14 @@ struct QuizQuestion: Identifiable, Hashable {
 
             case .capitalToCountry:
                 prompt    = country.capital
+                correct   = country.name
+                wrongPool = countries.filter { $0.name != country.name }.map { $0.name }
+
+            case .mapToCountry:
+                // prompt = country.id (English) so CountryMapView / ShapeLoader
+                // can find the polygon — shapes are keyed on English names.
+                // correct = country.name (localised) — what the user picks.
+                prompt    = country.id
                 correct   = country.name
                 wrongPool = countries.filter { $0.name != country.name }.map { $0.name }
             }

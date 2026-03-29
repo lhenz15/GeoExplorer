@@ -10,9 +10,9 @@
 //
 // The new `id` is the English country name (e.g. "France") decoded directly
 // from the JSON.  Every other system that stores a country reference — the
-// SwiftData CountryProgress.countryName and FavoriteCountry.name — already
-// uses the English name as its key.  Making Country.id match that convention
-// means zero migration and O(1) lookups.
+// SwiftData CountryProgress.countryName, FavoriteCountry.name, and the
+// ShapeLoader dictionary — already uses the English name as its key.  Making
+// Country.id match that convention means zero migration and O(1) lookups.
 //
 // ── How does Codable work now? ────────────────────────────────────────────────
 // All properties are declared with `let` and have the same name as the JSON keys,
@@ -24,7 +24,7 @@ import Foundation
 struct Country: Identifiable, Codable, Hashable {
 
     // Stable English name — same in every language file.
-    // Used as the primary key for CountryProgress and FavoriteCountry.
+    // Used as the primary key for ShapeLoader, CountryProgress, and FavoriteCountry.
     let id        : String
 
     // Localised fields — change when the active language changes.

@@ -118,6 +118,7 @@ final class LanguageManager: ObservableObject {
         case "Country → Flag":    return t("quiz.mode.countryToFlag")
         case "Country → Capital": return t("quiz.mode.countryToCapital")
         case "Capital → Country": return t("quiz.mode.capitalToCountry")
+        case "Map → Country":     return t("quiz.mode.mapToCountry")
         default:                  return rawValue
         }
     }
@@ -170,6 +171,7 @@ extension QuizMode {
         case .countryToFlag:    return lang.t("quiz.mode.countryToFlag")
         case .countryToCapital: return lang.t("quiz.mode.countryToCapital")
         case .capitalToCountry: return lang.t("quiz.mode.capitalToCountry")
+        case .mapToCountry:     return lang.t("quiz.mode.mapToCountry")
         }
     }
 }

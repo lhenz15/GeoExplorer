@@ -101,6 +101,7 @@
     "quiz.mode.countryToFlag": "Country → Flag",
     "quiz.mode.countryToCapital": "Country → Capital",
     "quiz.mode.capitalToCountry": "Capital → Country",
+    "quiz.mode.mapToCountry": "Map → Country",
 
     "stats.title": "Stats",
     "stats.streak.singular": "Day Streak",
@@ -229,6 +230,7 @@
     "quiz.mode.countryToFlag": "País → Bandera",
     "quiz.mode.countryToCapital": "País → Capital",
     "quiz.mode.capitalToCountry": "Capital → País",
+    "quiz.mode.mapToCountry": "Mapa → País",
 
     "stats.title": "Estadísticas",
     "stats.streak.singular": "Día de Racha",
