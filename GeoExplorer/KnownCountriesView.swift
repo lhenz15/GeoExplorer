@@ -112,11 +112,22 @@ struct KnownCountriesView: View {
             Divider()
 
             // ── Country list ────────────────────────────────────────────────
-            // Grouped by continent.  Each section header has a 'Select All'
-            // button that bulk-toggles the entire continent.
+            // "All" → flat list, just like the Explore tab.
+            // Specific continent → single section with a 'Select All' header button.
             if filteredCountries.isEmpty {
                 ContentUnavailableView.search(text: searchText)
+            } else if selectedContinent == "all" {
+                // Flat list — no grouping, no section headers.
+                List(filteredCountries) { country in
+                    KnownCountryRow(
+                        country : country,
+                        isKnown : knownIds.contains(country.id),
+                        onToggle: { toggleKnown(country.id) }
+                    )
+                }
+                .listStyle(.plain)
             } else {
+                // Single continent selected — show one section with a bulk toggle.
                 List {
                     ForEach(visibleContinents) { continent in
                         Section {
@@ -128,10 +139,6 @@ struct KnownCountriesView: View {
                                 )
                             }
                         } header: {
-                            // ── Section header ────────────────────────────
-                            // .textCase(nil) keeps the title in title-case
-                            // rather than ALL CAPS (SwiftUI's default for
-                            // List section headers).
                             HStack {
                                 Text(continent.name)
                                     .font(.subheadline)
