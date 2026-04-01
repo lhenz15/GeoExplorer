@@ -166,6 +166,19 @@ struct KnownCountriesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: lang.t("known.search"))
         .background(AppColors.background)
+        .toolbar {
+            // Only show the bulk toggle button in the flat 'All' view.
+            // In continent view the Select All button lives in the section header.
+            if selectedContinent == "all" {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    let allKnown = filteredCountries.allSatisfy { knownIds.contains($0.id) }
+                    Button(allKnown ? lang.t("known.deselectAll") : lang.t("known.selectAll")) {
+                        selectAllVisible(currentlyAllKnown: allKnown)
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
@@ -180,6 +193,20 @@ struct KnownCountriesView: View {
             let p = CountryProgress(countryName: countryId)
             p.isKnown = true
             modelContext.insert(p)
+        }
+    }
+
+    /// Bulk-toggle all currently visible countries (used in the flat 'All' view).
+    private func selectAllVisible(currentlyAllKnown: Bool) {
+        let targetValue = !currentlyAllKnown
+        for country in filteredCountries {
+            if let existing = allProgress.first(where: { $0.countryName == country.id }) {
+                existing.isKnown = targetValue
+            } else if targetValue {
+                let p = CountryProgress(countryName: country.id)
+                p.isKnown = true
+                modelContext.insert(p)
+            }
         }
     }
 
