@@ -45,6 +45,10 @@ struct FlashcardView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .onChange(of: cards) {
+            currentIndex = 0
+            isFlipped    = false
+        }
         .screenAppear()
         .navigationTitle("\(lang.t("flashcard.card.title")) \(currentIndex + 1) \(lang.t("flashcard.card.of")) \(cards.count)")
         .navigationBarTitleDisplayMode(.inline)
