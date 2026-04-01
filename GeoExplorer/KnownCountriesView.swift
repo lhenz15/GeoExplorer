@@ -112,52 +112,16 @@ struct KnownCountriesView: View {
             Divider()
 
             // ── Country list ────────────────────────────────────────────────
-            // "All" → flat list, just like the Explore tab.
-            // Specific continent → single section with a 'Select All' header button.
+            // Always a flat list — no section headers regardless of continent filter.
             if filteredCountries.isEmpty {
                 ContentUnavailableView.search(text: searchText)
-            } else if selectedContinent == "all" {
-                // Flat list — no grouping, no section headers.
+            } else {
                 List(filteredCountries) { country in
                     KnownCountryRow(
                         country : country,
                         isKnown : knownIds.contains(country.id),
                         onToggle: { toggleKnown(country.id) }
                     )
-                }
-                .listStyle(.plain)
-            } else {
-                // Single continent selected — show one section with a bulk toggle.
-                List {
-                    ForEach(visibleContinents) { continent in
-                        Section {
-                            ForEach(countries(for: continent.id)) { country in
-                                KnownCountryRow(
-                                    country : country,
-                                    isKnown : knownIds.contains(country.id),
-                                    onToggle: { toggleKnown(country.id) }
-                                )
-                            }
-                        } header: {
-                            HStack {
-                                Text(continent.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                let allKnown = countries(for: continent.id)
-                                    .allSatisfy { knownIds.contains($0.id) }
-                                Button(allKnown ? lang.t("known.deselectAll") : lang.t("known.selectAll")) {
-                                    selectAll(in: continent.id, currentlyAllKnown: allKnown)
-                                }
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(AppColors.accent)
-                            }
-                            .padding(.vertical, 2)
-                            .textCase(nil)
-                        }
-                    }
                 }
                 .listStyle(.plain)
             }
@@ -167,16 +131,12 @@ struct KnownCountriesView: View {
         .searchable(text: $searchText, prompt: lang.t("known.search"))
         .background(AppColors.background)
         .toolbar {
-            // Only show the bulk toggle button in the flat 'All' view.
-            // In continent view the Select All button lives in the section header.
-            if selectedContinent == "all" {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    let allKnown = filteredCountries.allSatisfy { knownIds.contains($0.id) }
-                    Button(allKnown ? lang.t("known.deselectAll") : lang.t("known.selectAll")) {
-                        selectAllVisible(currentlyAllKnown: allKnown)
-                    }
-                    .fontWeight(.semibold)
+            ToolbarItem(placement: .navigationBarTrailing) {
+                let allKnown = filteredCountries.allSatisfy { knownIds.contains($0.id) }
+                Button(allKnown ? lang.t("known.deselectAll") : lang.t("known.selectAll")) {
+                    selectAllVisible(currentlyAllKnown: allKnown)
                 }
+                .fontWeight(.semibold)
             }
         }
     }
