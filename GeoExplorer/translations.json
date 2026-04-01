@@ -80,6 +80,7 @@
     "quiz.setup.questions": "Number of Questions",
     "quiz.setup.questionsLabel": "Questions",
     "quiz.setup.region": "Region",
+    "quiz.setup.all": "All",
     "quiz.setup.start": "Start Quiz",
     "quiz.question.title": "Question",
     "quiz.question.of": "of",
@@ -126,7 +127,26 @@
     "settings.reset.cancel": "Cancel",
     "settings.language.header": "Language",
     "settings.language.english": "English",
-    "settings.language.spanish": "Spanish"
+    "settings.language.spanish": "Spanish",
+
+    "home.stat.known": "Known",
+
+    "known.navTitle": "Known Countries",
+    "known.status.of": "of",
+    "known.status.suffix": "marked as known",
+    "known.selectAll": "Select All",
+    "known.deselectAll": "Deselect All",
+    "known.search": "Search countries",
+    "known.badge": "Known",
+    "known.badge.mastered": "Mastered",
+    "known.button.markKnown": "I already know this country",
+    "known.button.isKnown": "I know this country",
+    "known.accessibility": "Manage Known Countries",
+
+    "settings.known.header": "Known Countries",
+    "settings.known.link": "Known Countries",
+    "settings.known.toggle": "Exclude from quizzes",
+    "settings.known.footer": "Mark countries you already know. When 'Exclude from quizzes' is on they won't appear as correct answers in Quiz, Flashcard, or Map Quiz."
   },
   "es": {
     "tab.home": "Inicio",
@@ -209,6 +229,7 @@
     "quiz.setup.questions": "Número de Preguntas",
     "quiz.setup.questionsLabel": "Preguntas",
     "quiz.setup.region": "Región",
+    "quiz.setup.all": "Todos",
     "quiz.setup.start": "Empezar Quiz",
     "quiz.question.title": "Pregunta",
     "quiz.question.of": "de",
@@ -255,6 +276,25 @@
     "settings.reset.cancel": "Cancelar",
     "settings.language.header": "Idioma",
     "settings.language.english": "Inglés",
-    "settings.language.spanish": "Español"
+    "settings.language.spanish": "Español",
+
+    "home.stat.known": "Conocidos",
+
+    "known.navTitle": "Países Conocidos",
+    "known.status.of": "de",
+    "known.status.suffix": "marcados como conocidos",
+    "known.selectAll": "Seleccionar Todo",
+    "known.deselectAll": "Deseleccionar Todo",
+    "known.search": "Buscar países",
+    "known.badge": "Conocido",
+    "known.badge.mastered": "Dominado",
+    "known.button.markKnown": "Ya conozco este país",
+    "known.button.isKnown": "Conozco este país",
+    "known.accessibility": "Gestionar Países Conocidos",
+
+    "settings.known.header": "Países Conocidos",
+    "settings.known.link": "Países Conocidos",
+    "settings.known.toggle": "Excluir de los quizzes",
+    "settings.known.footer": "Marca los países que ya conoces. Cuando 'Excluir de los quizzes' está activado, no aparecerán como respuestas correctas en Quiz, Tarjetas ni Quiz de Mapa."
   }
 }

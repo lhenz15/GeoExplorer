@@ -37,6 +37,10 @@ struct HomeView: View {
         progress.filter { $0.hasGoldBadge }.count
     }
 
+    private var knownCount: Int {
+        progress.filter { $0.isKnown }.count
+    }
+
     private func masteredForMode(_ mode: QuizMode) -> Int {
         progress.filter { $0.modeProgress(for: mode).isMastered }.count
     }
@@ -126,10 +130,11 @@ struct HomeView: View {
 
     // ── Quick stats ───────────────────────────────────────────────────────────
     private var statsRow: some View {
-        HStack(spacing: 10) {
-            statCard(value: bestScoreText,        label: lang.t("home.stat.bestScore"),   icon: "star.fill",           color: .yellow)
-            statCard(value: "\(masteredCount)",   label: lang.t("home.stat.mastered"),    icon: "checkmark.seal.fill", color: .green)
-            statCard(value: "\(favorites.count)", label: lang.t("home.stat.favourites"),  icon: "heart.fill",          color: .pink)
+        HStack(spacing: 8) {
+            statCard(value: bestScoreText,        label: lang.t("home.stat.bestScore"),  icon: "star.fill",              color: .yellow)
+            statCard(value: "\(masteredCount)",   label: lang.t("home.stat.mastered"),   icon: "checkmark.seal.fill",    color: .green)
+            statCard(value: "\(knownCount)/195",  label: lang.t("home.stat.known"),      icon: "checkmark.circle.fill",  color: .mint)
+            statCard(value: "\(favorites.count)", label: lang.t("home.stat.favourites"), icon: "heart.fill",             color: .pink)
         }
     }
 

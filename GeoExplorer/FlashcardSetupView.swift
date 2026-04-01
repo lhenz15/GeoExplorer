@@ -4,11 +4,18 @@
 // Screen 1: the user chooses mode, continent, and card count before studying.
 
 import SwiftUI
+import SwiftData
 
 struct FlashcardSetupView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var lang: LanguageManager
+
+    // ── SwiftData ─────────────────────────────────────────────────────────────
+    @Query private var allProgress: [CountryProgress]
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+    @AppStorage("excludeKnownCountries") private var excludeKnownCountries = false
 
     @State private var path: [FlashcardRoute] = []
 
@@ -18,11 +25,21 @@ struct FlashcardSetupView: View {
 
     private let cardCounts = [5, 10, 20, 0]
 
+    // Set of known country ids — empty when the toggle is off.
+    private var knownIds: Set<String> {
+        guard excludeKnownCountries else { return [] }
+        return Set(allProgress.filter { $0.isKnown }.map { $0.countryName })
+    }
+
     // ── Derived values ────────────────────────────────────────────────────────
     private var availableCountries: [Country] {
-        selectedContinent == "all"
+        var base = selectedContinent == "all"
             ? lang.countries
             : lang.countries.filter { $0.continent == selectedContinent }
+        if !knownIds.isEmpty {
+            base = base.filter { !knownIds.contains($0.id) }
+        }
+        return base
     }
 
     private var actualCount: Int {

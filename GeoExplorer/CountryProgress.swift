@@ -11,6 +11,10 @@
 // simulator / device before your first build to let SwiftData start fresh.
 // In Xcode: Product → Clean Build Folder, then delete the app, then run.
 //
+// Adding `isKnown: Bool = false` is a lightweight migration — SwiftData reads
+// the default value (false) for any existing row that doesn't have the column
+// yet, so you do NOT need to wipe the database for this particular change.
+//
 // ── How SwiftData stores Codable structs ──────────────────────────────────────
 // Any property whose type conforms to Codable is automatically serialised to
 // JSON inside SwiftData's SQLite file.  You don't need @Attribute, a custom
@@ -27,6 +31,16 @@ import SwiftData
 class CountryProgress {
 
     var countryName      : String
+
+    // ── Already Known flag ────────────────────────────────────────────────────
+    // A manual user override — completely separate from the mastery system.
+    // When true the user has said "I already know this country", which means:
+    //   • A green ✓ badge is shown in the country list and detail view.
+    //   • When 'Exclude known countries from quizzes' is on in Settings the
+    //     country is skipped as a *correct answer* in all quiz modes (it can
+    //     still appear as a wrong-answer distractor).
+    // Default is false — every country starts as unknown.
+    var isKnown: Bool = false
 
     // One ModeProgress value per quiz mode.
     // SwiftData serialises each Codable struct automatically.

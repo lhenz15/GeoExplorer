@@ -20,6 +20,9 @@ struct SettingsView: View {
     @AppStorage("geoexplorer.reminderHour")    private var reminderHour    = 20
     @AppStorage("geoexplorer.reminderMinute")  private var reminderMinute  = 0
 
+    // ── Known countries settings ──────────────────────────────────────────────
+    @AppStorage("excludeKnownCountries") private var excludeKnownCountries = false
+
     // ── SwiftData — needed for the reset action ───────────────────────────────
     @Query private var sessions : [QuizSession]
     @Query private var progress : [CountryProgress]
@@ -125,6 +128,25 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text(lang.t("settings.reminder.header"))
+                }
+
+                // ── Known countries ────────────────────────────────────────────
+                // NavigationLink pushes KnownCountriesView onto the navigation
+                // stack.  The Toggle is wired directly to UserDefaults via
+                // @AppStorage — no extra save call needed.
+                Section {
+                    NavigationLink {
+                        KnownCountriesView()
+                    } label: {
+                        Label(lang.t("settings.known.link"), systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.primary)
+                    }
+
+                    Toggle(lang.t("settings.known.toggle"), isOn: $excludeKnownCountries)
+                } header: {
+                    Text(lang.t("settings.known.header"))
+                } footer: {
+                    Text(lang.t("settings.known.footer"))
                 }
 
                 // ── Reset progress ─────────────────────────────────────────────

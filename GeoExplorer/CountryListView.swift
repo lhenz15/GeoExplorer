@@ -22,12 +22,17 @@ struct CountryListView: View {
 
     @EnvironmentObject var lang: LanguageManager
 
-    // Watch the mastery database so the ⭐ badges update live after a quiz.
-    // We compute a Set<String> of mastered ids for O(1) lookup in the list.
+    // Watch the mastery database so badges update live after a quiz or toggle.
+    // We compute Set<String>s for O(1) lookup per row.
     @Query private var allProgress: [CountryProgress]
 
     private var goldBadgeIds: Set<String> {
         Set(allProgress.filter { $0.hasGoldBadge }.map { $0.countryName })
+    }
+
+    // Known-country ids for the green ✓ badge.
+    private var knownIds: Set<String> {
+        Set(allProgress.filter { $0.isKnown }.map { $0.countryName })
     }
 
     @State private var searchText        = ""
@@ -108,8 +113,18 @@ struct CountryListView: View {
 
                             Spacer()
 
+                            // ✓ already-known badge — green, shown when the
+                            // user has manually marked this country as known.
+                            if knownIds.contains(country.id) {
+                                Text("✓")
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.green)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+
                             // ⭐ gold badge — visible once the country is
-                            // mastered in at least 2 of the 4 quiz modes.
+                            // mastered in at least 3 of the 5 quiz modes.
                             // Matched by country.id (stable English key).
                             if goldBadgeIds.contains(country.id) {
                                 Text("⭐")
@@ -134,6 +149,17 @@ struct CountryListView: View {
         }
         .navigationTitle(lang.t("explore.navTitle"))
         .searchable(text: $searchText, prompt: lang.t("explore.search"))
+        .toolbar {
+            // Tap to open the bulk known-countries picker screen.
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink {
+                    KnownCountriesView()
+                } label: {
+                    Image(systemName: "person.fill.checkmark")
+                        .accessibilityLabel(lang.t("known.accessibility"))
+                }
+            }
+        }
     }
 }
 

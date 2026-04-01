@@ -5,11 +5,21 @@
 // Owns the NavigationStack and generates the QuizQuestion array.
 
 import SwiftUI
+import SwiftData
 
 struct QuizSetupView: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var lang: LanguageManager
+
+    // ── SwiftData ─────────────────────────────────────────────────────────────
+    @Query private var allProgress: [CountryProgress]
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+    // @AppStorage reads/writes UserDefaults automatically.
+    // When this is true, countries the user marked as 'known' are filtered out
+    // of the question pool so they never appear as the correct answer.
+    @AppStorage("excludeKnownCountries") private var excludeKnownCountries = false
 
     @State private var path: [QuizRoute] = []
 
@@ -17,7 +27,14 @@ struct QuizSetupView: View {
     @State private var selectedContinent : String   = "all"
     @State private var questionCount     : Int      = 10
 
-    private let counts = [5, 10, 20]
+    private let counts = [5, 10, 20, 0]   // 0 = All
+
+    // Set of country ids (English) that the user has marked as 'known'.
+    // Empty when the exclude toggle is off so no filtering happens.
+    private var knownIds: Set<String> {
+        guard excludeKnownCountries else { return [] }
+        return Set(allProgress.filter { $0.isKnown }.map { $0.countryName })
+    }
 
     // ── Derived values ────────────────────────────────────────────────────────
     private var availableCountries: [Country] {
@@ -27,11 +44,16 @@ struct QuizSetupView: View {
         if mode == .mapToCountry {
             pool = pool.filter { ShapeLoader.shapeNames.contains($0.id) }
         }
+        if !knownIds.isEmpty {
+            pool = pool.filter { !knownIds.contains($0.id) }
+        }
         return pool
     }
 
     private var actualCount: Int {
-        min(questionCount, availableCountries.count)
+        questionCount == 0
+            ? availableCountries.count
+            : min(questionCount, availableCountries.count)
     }
 
     // ── Body ──────────────────────────────────────────────────────────────────
@@ -61,7 +83,7 @@ struct QuizSetupView: View {
                 Section(lang.t("quiz.setup.questions")) {
                     Picker("Questions", selection: $questionCount) {
                         ForEach(counts, id: \.self) { n in
-                            Text("\(n)").tag(n)
+                            Text(n == 0 ? lang.t("quiz.setup.all") : "\(n)").tag(n)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -152,10 +174,11 @@ struct QuizSetupView: View {
     // ── Question generation ────────────────────────────────────────────────────
     private func generateQuestions() -> [QuizQuestion] {
         QuizQuestion.generate(
-            mode     : mode,
-            continent: selectedContinent,
-            count    : questionCount,
-            from     : lang.countries
+            mode       : mode,
+            continent  : selectedContinent,
+            count      : questionCount,
+            from       : lang.countries,
+            excludedIds: knownIds
         )
     }
 }

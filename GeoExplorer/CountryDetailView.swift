@@ -13,6 +13,20 @@ struct CountryDetailView: View {
 
     @EnvironmentObject var lang: LanguageManager
 
+    // ── SwiftData — for the isKnown toggle ────────────────────────────────────
+    // @Query watches the entire CountryProgress table.  We filter with a
+    // computed property below.  Because the result is a live @Query, the view
+    // re-renders the moment the flag changes (e.g. from KnownCountriesView).
+    @Query private var allProgress: [CountryProgress]
+    @Environment(\.modelContext) private var modelContext
+
+    // The progress record for this specific country (nil if none exists yet).
+    private var progress: CountryProgress? {
+        allProgress.first { $0.countryName == country.id }
+    }
+
+    private var isKnown: Bool { progress?.isKnown ?? false }
+
     @State private var flagScale: CGFloat = 0.1
 
     var body: some View {
@@ -40,10 +54,60 @@ struct CountryDetailView: View {
                         Text(lang.continentName(for: country.continent))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+
+                        // ── Badges row ────────────────────────────────
+                        // Shows ✓ and/or ⭐ side by side when applicable.
+                        if isKnown || (progress?.hasGoldBadge ?? false) {
+                            HStack(spacing: 8) {
+                                if isKnown {
+                                    Label(lang.t("known.badge"), systemImage: "checkmark.circle.fill")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.green)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.green.opacity(0.12))
+                                        .clipShape(Capsule())
+                                }
+                                if progress?.hasGoldBadge ?? false {
+                                    Label(lang.t("known.badge.mastered"), systemImage: "star.fill")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.yellow)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.yellow.opacity(0.12))
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                        }
                     }
                     Spacer()
                 }
                 .padding(.top, 8)
+
+                // ── 'I already know this' button ─────────────────────────
+                // Filled green when known, outlined when not.
+                // The button creates a CountryProgress record if one doesn't
+                // exist yet, or flips isKnown on the existing record.
+                if isKnown {
+                    Button { toggleKnown() } label: {
+                        Label(lang.t("known.button.isKnown"), systemImage: "checkmark.circle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .controlSize(.large)
+                } else {
+                    Button { toggleKnown() } label: {
+                        Label(lang.t("known.button.markKnown"), systemImage: "checkmark.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
+                    .controlSize(.large)
+                }
 
                 // ── Info cards grid ──────────────────────────────────────
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -97,6 +161,19 @@ struct CountryDetailView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 FavoriteButton(countryId: country.id)
             }
+        }
+    }
+
+    // ── isKnown toggle ────────────────────────────────────────────────────────
+    private func toggleKnown() {
+        if let existing = progress {
+            existing.isKnown.toggle()
+        } else {
+            // No progress record yet — create one and immediately mark it known.
+            // SwiftData tracks the new object and saves it automatically.
+            let p = CountryProgress(countryName: country.id)
+            p.isKnown = true
+            modelContext.insert(p)
         }
     }
 

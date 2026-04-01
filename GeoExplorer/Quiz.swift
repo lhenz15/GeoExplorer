@@ -44,7 +44,13 @@ struct QuizQuestion: Identifiable, Hashable {
     // `count` is clamped to the pool size automatically.
     // `countries` is passed in from LanguageManager so questions use the
     // active language's localised names.
-    static func generate(mode: QuizMode, continent: String, count: Int, from countries: [Country]) -> [QuizQuestion] {
+    // `excludedIds` — a set of English country ids (country.id) that must not
+    // appear as the *correct* answer.  They can still appear as wrong-answer
+    // distractors because `wrongPool` is built from the full `countries` list.
+    // Pass an empty set (the default) to disable filtering.
+    static func generate(mode: QuizMode, continent: String, count: Int,
+                         from countries: [Country],
+                         excludedIds: Set<String> = []) -> [QuizQuestion] {
         var pool = continent == "all"
             ? countries
             : countries.filter { $0.continent == continent }
@@ -55,7 +61,15 @@ struct QuizQuestion: Identifiable, Hashable {
             pool = pool.filter { ShapeLoader.shapeNames.contains($0.id) }
         }
 
-        let actualCount = min(count, pool.count)
+        // Remove countries the user has marked as 'already known' from the
+        // answer pool.  They remain in `countries` so they can still be chosen
+        // as wrong-answer options — the user needs to recognise all flags, not
+        // just the ones they haven't mastered yet.
+        if !excludedIds.isEmpty {
+            pool = pool.filter { !excludedIds.contains($0.id) }
+        }
+
+        let actualCount = count == 0 ? pool.count : min(count, pool.count)
         let slice = Array(pool.shuffled().prefix(actualCount))
 
         return slice.map { country in

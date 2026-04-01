@@ -5,6 +5,7 @@
 // Displays the final score and offers Play Again or Back to Setup.
 
 import SwiftUI
+import SwiftData
 
 struct QuizResultView: View {
 
@@ -17,6 +18,15 @@ struct QuizResultView: View {
     @Binding var path: [QuizRoute]
 
     @EnvironmentObject var lang: LanguageManager
+
+    // ── Known-countries filtering (mirrors QuizSetupView) ─────────────────────
+    @Query private var allProgress: [CountryProgress]
+    @AppStorage("excludeKnownCountries") private var excludeKnownCountries = false
+
+    private var knownIds: Set<String> {
+        guard excludeKnownCountries else { return [] }
+        return Set(allProgress.filter { $0.isKnown }.map { $0.countryName })
+    }
 
     // ── Derived values ────────────────────────────────────────────────────────
     private var percentage: Double  { total > 0 ? Double(score) / Double(total) : 0 }
@@ -61,6 +71,8 @@ struct QuizResultView: View {
 
                     Text("\(score) / \(total)")
                         .font(.system(size: 60, weight: .bold))
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
 
                     Text("\(percentText) \(lang.t("quiz.result.percentCorrect"))")
                         .font(.title3)
@@ -89,10 +101,11 @@ struct QuizResultView: View {
 
                 Button {
                     let freshQuestions = QuizQuestion.generate(
-                        mode     : mode,
-                        continent: continent,
-                        count    : questionCount,
-                        from     : lang.countries
+                        mode       : mode,
+                        continent  : continent,
+                        count      : questionCount,
+                        from       : lang.countries,
+                        excludedIds: knownIds
                     )
                     path = [.quiz(mode: mode, questions: freshQuestions)]
                 } label: {
