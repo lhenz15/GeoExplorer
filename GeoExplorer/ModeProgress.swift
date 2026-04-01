@@ -21,7 +21,7 @@
 
 import Foundation
 
-struct ModeProgress: Codable, Sendable {
+struct ModeProgress: Codable {
 
     // ── Credits ───────────────────────────────────────────────────────────────
     // Counts "clean sessions" earned toward mastery.

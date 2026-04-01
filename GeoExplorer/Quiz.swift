@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ── Answer mode ───────────────────────────────────────────────────────────────
+// Controls whether the user picks from four buttons or types a free-text answer.
+enum AnswerMode: String, CaseIterable, Hashable {
+    case multipleChoice
+    case typeIt
+}
+
 // ── Quiz modes ────────────────────────────────────────────────────────────────
 enum QuizMode: String, CaseIterable {
     case flagToCountry    = "Flag → Country"
@@ -12,6 +19,16 @@ enum QuizMode: String, CaseIterable {
     case countryToCapital = "Country → Capital"
     case capitalToCountry = "Capital → Country"
     case mapToCountry     = "Map → Country"
+
+    // Type It only makes sense when the correct answer is plain text the user
+    // can reasonably type.  Country → Flag (emoji) and Map → Country (visual)
+    // cannot be typed, so they are excluded.
+    var supportsTypeIt: Bool {
+        switch self {
+        case .countryToFlag, .mapToCountry: return false
+        default: return true
+        }
+    }
 }
 
 // ── A single quiz question ─────────────────────────────────────────────────────
@@ -126,7 +143,7 @@ struct QuizQuestion: Identifiable, Hashable {
 // `.results` carries `continent` and `questionCount` so Play Again can
 // generate a completely fresh batch without going back to setup.
 enum QuizRoute: Hashable {
-    case quiz(mode: QuizMode, questions: [QuizQuestion])
+    case quiz(mode: QuizMode, questions: [QuizQuestion], answerMode: AnswerMode)
     case results(score: Int, total: Int, mode: QuizMode, questions: [QuizQuestion],
-                 continent: String, questionCount: Int)
+                 continent: String, questionCount: Int, answerMode: AnswerMode)
 }

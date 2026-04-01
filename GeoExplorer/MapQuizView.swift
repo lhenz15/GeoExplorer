@@ -191,7 +191,8 @@ struct MapQuizView: View {
                 mode         : mode,
                 questions    : questions,
                 continent    : continent,
-                questionCount: questionCount
+                questionCount: questionCount,
+                answerMode   : .multipleChoice
             ))
         }
     }
@@ -229,7 +230,7 @@ struct MapQuizView: View {
             mode         : .mapToCountry,
             continent    : "all",
             questionCount: 10,
-            path         : .constant([.quiz(mode: .mapToCountry, questions: [])])
+            path         : .constant([.quiz(mode: .mapToCountry, questions: [], answerMode: .multipleChoice)])
         )
     }
     .environmentObject(LanguageManager())

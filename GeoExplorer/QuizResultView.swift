@@ -15,6 +15,7 @@ struct QuizResultView: View {
     let questions    : [QuizQuestion]
     let continent    : String
     let questionCount: Int
+    let answerMode   : AnswerMode
     @Binding var path: [QuizRoute]
 
     @EnvironmentObject var lang: LanguageManager
@@ -107,7 +108,7 @@ struct QuizResultView: View {
                         from       : lang.countries,
                         excludedIds: knownIds
                     )
-                    path = [.quiz(mode: mode, questions: freshQuestions)]
+                    path = [.quiz(mode: mode, questions: freshQuestions, answerMode: answerMode)]
                 } label: {
                     Label(lang.t("quiz.result.playAgain"), systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
@@ -166,10 +167,11 @@ struct QuizResultView: View {
             questions    : [],
             continent    : "all",
             questionCount: 10,
+            answerMode   : .multipleChoice,
             path         : .constant([
-                .quiz(mode: .flagToCountry, questions: []),
+                .quiz(mode: .flagToCountry, questions: [], answerMode: .multipleChoice),
                 .results(score: 7, total: 10, mode: .flagToCountry, questions: [],
-                         continent: "all", questionCount: 10)
+                         continent: "all", questionCount: 10, answerMode: .multipleChoice)
             ])
         )
     }

@@ -23,9 +23,10 @@ struct QuizSetupView: View {
 
     @State private var path: [QuizRoute] = []
 
-    @State private var mode              : QuizMode = .flagToCountry
-    @State private var selectedContinent : String   = "all"
-    @State private var questionCount     : Int      = 10
+    @State private var mode              : QuizMode    = .flagToCountry
+    @State private var answerMode        : AnswerMode  = .multipleChoice
+    @State private var selectedContinent : String      = "all"
+    @State private var questionCount     : Int         = 10
 
     private let counts = [5, 10, 20, 0]   // 0 = All
 
@@ -68,6 +69,25 @@ struct QuizSetupView: View {
                             Text(m.localizedName(using: lang)).tag(m)
                         }
                     }
+                    .onChange(of: mode) { _, newMode in
+                        // Type It only works for text answers — reset when switching
+                        // to a mode where the answer is an emoji flag or a map shape.
+                        if !newMode.supportsTypeIt { answerMode = .multipleChoice }
+                    }
+                }
+
+                // ── Answer mode section ────────────────────────────────────
+                // Hidden for modes where the answer can't be typed:
+                //   • Country → Flag  (answer is an emoji)
+                //   • Map → Country   (answer is picked from a visual map)
+                if mode.supportsTypeIt {
+                    Section(lang.t("quiz.setup.answerMode")) {
+                        Picker(lang.t("quiz.setup.answerMode"), selection: $answerMode) {
+                            Text(lang.t("quiz.answerMode.multipleChoice")).tag(AnswerMode.multipleChoice)
+                            Text(lang.t("quiz.answerMode.typeIt")).tag(AnswerMode.typeIt)
+                        }
+                        .pickerStyle(.segmented)
+                    }
                 }
 
                 // ── Continent section ──────────────────────────────────────
@@ -108,7 +128,7 @@ struct QuizSetupView: View {
                         }
 
                         Button {
-                            path.append(.quiz(mode: mode, questions: generateQuestions()))
+                            path.append(.quiz(mode: mode, questions: generateQuestions(), answerMode: answerMode))
                         } label: {
                             Text(lang.t("quiz.setup.start"))
                                 .frame(maxWidth: .infinity)
@@ -136,7 +156,7 @@ struct QuizSetupView: View {
             // ── Navigation destinations ────────────────────────────────────
             .navigationDestination(for: QuizRoute.self) { route in
                 switch route {
-                case .quiz(let mode, let questions):
+                case .quiz(let mode, let questions, let answerMode):
                     if mode == .mapToCountry {
                         MapQuizView(
                             questions    : questions,
@@ -150,13 +170,14 @@ struct QuizSetupView: View {
                         QuizView(
                             questions    : questions,
                             mode         : mode,
+                            answerMode   : answerMode,
                             continent    : selectedContinent,
                             questionCount: actualCount,
                             path         : $path
                         )
                         .id(questions.map { $0.id })
                     }
-                case .results(let score, let total, let mode, let questions, let continent, let questionCount):
+                case .results(let score, let total, let mode, let questions, let continent, let questionCount, let answerMode):
                     QuizResultView(
                         score        : score,
                         total        : total,
@@ -164,6 +185,7 @@ struct QuizSetupView: View {
                         questions    : questions,
                         continent    : continent,
                         questionCount: questionCount,
+                        answerMode   : answerMode,
                         path         : $path
                     )
                 }
